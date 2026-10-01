@@ -739,7 +739,7 @@ run(function()
 		end
 	})
 
-	local remoteNames = {
+	local remoteNames, preDumped = {
 		AfkStatus = debug.getproto(Knit.Controllers.AfkController.KnitStart, 1),
 		AttackEntity = Knit.Controllers.SwordController.sendServerRequest,
 		BeePickup = Knit.Controllers.BeeNetController.trigger,
@@ -775,7 +775,6 @@ run(function()
 	local function dumpRemote(tab)
 		local ind
 		for i, v in tab do
-			print(i,v)
 			if v == 'Client' then
 				ind = i
 				break
@@ -788,7 +787,10 @@ run(function()
 		local remote = dumpRemote(debug.getconstants(v))
 		if remote == '' then
 			notif('Vape', 'Failed to grab remote ('..i..')', 10, 'alert')
+		else
+			print(remote)
 		end
+		
 		remotes[i] = remote
 	end
 
