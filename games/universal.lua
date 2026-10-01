@@ -16,7 +16,7 @@ local function createDownloader(text)
 	if not downloader then
 		downloader = Instance.new('TextLabel')
 		downloader.BackgroundTransparency = 1
-		downloader.FontFace = uipallet.Font
+		downloader.FontFace = Font.fromEnum(Enum.Font.Arial)
 		downloader.Size = UDim2.new(1, 0, 0, 40)
 		downloader.TextColor3 = Color3.new(1, 1, 1)
 		downloader.TextSize = 20
