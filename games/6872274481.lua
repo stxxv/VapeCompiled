@@ -759,7 +759,7 @@ run(function()
 	}
 
 	for i, v in remoteNames do
-		remotes[i] = remote
+		remotes[i] = v
 	end
 
 	OldBreak = bedwars.BlockController.isBlockBreakable
