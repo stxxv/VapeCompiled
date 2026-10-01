@@ -775,6 +775,7 @@ run(function()
 	local function dumpRemote(tab)
 		local ind
 		for i, v in tab do
+			print(i,v)
 			if v == 'Client' then
 				ind = i
 				break
