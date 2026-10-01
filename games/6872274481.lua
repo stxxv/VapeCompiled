@@ -2215,19 +2215,15 @@ run(function()
 
 									if not AttackDelay[v] then
 										AttackDelay[v] = {
-											Attack = 0,
-											Current = 0
+											Attack = 0
 										}
 									end
 
-									if tick() - AttackDelay[v].Attack > AttackDelay[v].Current then
+									if os.clock() >= AttackDelay[v].Attack then
 										local hitreg = calcHitreg(meta)
 										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3
 
-										AttackDelay[v] = {
-											Attack = tick() + delay,
-											Current = delay
-										}
+										AttackDelay[v].Attack = os.clock() + delay
 
 										AttackRemote:FireServer({
 											weapon = sword.tool,
@@ -2284,8 +2280,6 @@ run(function()
 				debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
 				debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
 				Attacking = false
-				AttackDelay = 0
-				CurrentDelay = 0
 				if armC0 then
 					AnimTween = tweenService:Create(gameCamera.Viewmodel.RightHand.RightWrist, TweenInfo.new(AnimationTween.Enabled and 0.001 or 0.3, Enum.EasingStyle.Exponential), {
 						C0 = armC0
@@ -4966,38 +4960,6 @@ run(function()
 				label = nil
 			end
 		end
-	})
-end)
-
-run(function()
-	local ShopTierBypass
-	local tiered, nexttier = {}, {}
-	
-	ShopTierBypass = vape.Categories.Utility:CreateModule({
-		Name = 'ShopTierBypass',
-		Function = function(callback)
-			if callback then
-				repeat task.wait() until store.shopLoaded or not ShopTierBypass.Enabled
-				if ShopTierBypass.Enabled then
-					for _, v in bedwars.Shop.ShopItems do
-						tiered[v] = v.tiered
-						nexttier[v] = v.nextTier
-						v.nextTier = nil
-						v.tiered = nil
-					end
-				end
-			else
-				for i, v in tiered do
-					i.tiered = v
-				end
-				for i, v in nexttier do
-					i.nextTier = v
-				end
-				table.clear(nexttier)
-				table.clear(tiered)
-			end
-		end,
-		Tooltip = 'Lets you buy things like armor early.'
 	})
 end)
 
