@@ -2222,7 +2222,7 @@ run(function()
 
 									if tick() - AttackDelay[v].Attack > AttackDelay[v].Current then
 										local hitreg = calcHitreg(meta)
-										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3]
+										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3
 
 										AttackDelay[v] = {
 											Attack = tick() + delay,
