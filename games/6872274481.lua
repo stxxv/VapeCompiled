@@ -2049,7 +2049,8 @@ run(function()
 	local LegitAura
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
-	local AttackRemote, AttackDelay, CurrentDelay = {FireServer = function() end}, 0, 0
+	local Hitreg
+	local AttackRemote, AttackDelays = {FireServer = function() end}, {}
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
 	end)
@@ -2212,12 +2213,21 @@ run(function()
 									store.attackReach = (delta.Magnitude * 100) // 1 / 100
 									store.attackReachUpdate = tick() + 1
 
+									if not AttackDelays[v] then
+										AttackDelays[v] = {
+											Attack = 0,
+											Current = 0
+										}
+									end
+
 									if tick() - AttackDelay > CurrentDelay then
 										local hitreg = calcHitreg(meta)
-										local delay = math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)
+										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3]
 
-										AttackDelay = tick() + delay
-										CurrentDelay = delay
+										AttackDelays[v] = {
+											Attack = tick() + delay,
+											Current = delay
+										}
 
 										AttackRemote:FireServer({
 											weapon = sword.tool,
@@ -2285,6 +2295,11 @@ run(function()
 			end
 		end,
 		Tooltip = 'Attack players around you\nwithout aiming at them.'
+	})
+	Hitreg = Killaura:CreateDropdown({
+		Name = 'Hitreg',
+		List = {'Dynamic', 'Static'},
+		Tooltip = 'Dynamic - Automatically uses your ping and sword cooldown to get the best hitreg.\nStatic - Uses your sword cooldown for a consistent hitreg.'
 	})
 	Targets = Killaura:CreateTargets({
 		Players = true,
