@@ -2033,7 +2033,7 @@ run(function()
 	local LegitAura
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
-	local AttackRemote, AttackDelay, CurrentDelay = {FireServer = function() end}, tick(), tick()
+	local AttackRemote, AttackDelay, CurrentDelay = {FireServer = function() end}, 0, 0
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
 	end)
@@ -2067,7 +2067,9 @@ run(function()
 			return 0.3
 		end
 
-		local raw = math.clamp(meta.sword.attackSpeed - math.min(math.clamp(lplr:GetNetworkPing(), 0, 1) * 0.5, meta.sword.attackSpeed * 0.35), 0.05, 2)
+		local base = meta.sword.attackSpeed
+		local raw = math.clamp(base - math.min(math.clamp(lplr:GetNetworkPing(), 0, 1) * 0.5, base * 0.35), 0.05, 2)
+
 		return math.clamp(raw, 0.05, 2)
 	end
 
@@ -2196,8 +2198,11 @@ run(function()
 
 									print(AttackDelay, CurrentDelay, tick())
 									if tick() - AttackDelay > CurrentDelay then
-										AttackDelay = tick() + math.clamp(math.min(calcHitreg(meta) / 4, 1 / 30), 1 / 60, 0.1)
-										CurrentDelay = math.clamp(math.min(calcHitreg(meta) / 4, 1 / 30), 1 / 60, 0.1)
+										local hitreg = calcHitreg(meta)
+										local delay = math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)
+
+										AttackDelay = tick() + delay
+										CurrentDelay = delay
 
 										AttackRemote:FireServer({
 											weapon = sword.tool,
@@ -2254,6 +2259,8 @@ run(function()
 				debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
 				debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
 				Attacking = false
+				AttackDelay = 0
+				CurrentDelay = 0
 				if armC0 then
 					AnimTween = tweenService:Create(gameCamera.Viewmodel.RightHand.RightWrist, TweenInfo.new(AnimationTween.Enabled and 0.001 or 0.3, Enum.EasingStyle.Exponential), {
 						C0 = armC0
