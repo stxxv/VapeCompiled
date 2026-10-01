@@ -2196,7 +2196,6 @@ run(function()
 									store.attackReach = (delta.Magnitude * 100) // 1 / 100
 									store.attackReachUpdate = tick() + 1
 
-									print(AttackDelay, CurrentDelay, tick())
 									if tick() - AttackDelay > CurrentDelay then
 										local hitreg = calcHitreg(meta)
 										local delay = math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)
