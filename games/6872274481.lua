@@ -2213,18 +2213,18 @@ run(function()
 									store.attackReach = (delta.Magnitude * 100) // 1 / 100
 									store.attackReachUpdate = tick() + 1
 
-									if not AttackDelays[v] then
-										AttackDelays[v] = {
+									if not AttackDelay[v] then
+										AttackDelay[v] = {
 											Attack = 0,
 											Current = 0
 										}
 									end
 
-									if tick() - AttackDelay > CurrentDelay then
+									if tick() - AttackDelay[v].Attack > AttackDelay[v].Current then
 										local hitreg = calcHitreg(meta)
 										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3]
 
-										AttackDelays[v] = {
+										AttackDelay[v] = {
 											Attack = tick() + delay,
 											Current = delay
 										}
