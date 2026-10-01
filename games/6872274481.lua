@@ -30,11 +30,6 @@ end
 local gameCamera = workspace.CurrentCamera
 local lplr = playersService.LocalPlayer
 
-local kickThread = task.spawn(lplr.Kick, lplr, 'Bedwars is no longer supported by Vape V4, thank you for 5 years of support ❤️')
-if coroutine.status(kickThread) ~= 'dead' then
-	game:Shutdown()
-end
-
 local vape = shared.vape
 local entitylib = vape.Libraries.entity
 local targetinfo = vape.Libraries.targetinfo
@@ -645,6 +640,20 @@ run(function()
 	vape:Clean(entitylib.Events.LocalAdded:Connect(updateVelocity))
 end)
 entitylib.start()
+
+local req = require
+local function require(obj)
+	local suc, res = pcall(function()
+		return req(obj)
+	end)
+
+	if suc and res and type(res) == 'table' then
+		return res
+	else
+		vape:CreateNotification('Vape', 'Failed to require: '..obj.Name..', error: '..tostring(res), 120, 'alert')
+		return {}
+	end
+end
 
 run(function()
 	local KnitInit, Knit
