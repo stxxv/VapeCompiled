@@ -789,11 +789,13 @@ run(function()
 		local remote = dumpRemote(debug.getconstants(v))
 		if remote == '' then
 			notif('Vape', 'Failed to grab remote ('..i..')', 10, 'alert')
-		else
-			print(remote)
 		end
 
 		remotes[i] = remote
+	end
+
+	for i,v in ipairs(remoteNames) do
+		print(i,v)
 	end
 
 	OldBreak = bedwars.BlockController.isBlockBreakable
