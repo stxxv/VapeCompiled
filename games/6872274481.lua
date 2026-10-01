@@ -2033,7 +2033,7 @@ run(function()
 	local LegitAura
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
-	local AttackRemote = {FireServer = function() end}
+	local AttackRemote, AttackDelay, CurrentDelay = {FireServer = function() end}, tick(), tick()
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
 	end)
@@ -2056,10 +2056,19 @@ run(function()
 		end
 
 		if LegitAura.Enabled then
-			if (tick() - bedwars.SwordController.lastSwing) > 0.2 then return false end
+			if (tick() - bedwars.SwordController.lastSwing) > 0.11 then return false end
 		end
 
 		return sword, meta
+	end
+
+	local function calcHitreg(meta)
+		if not meta or not meta.sword or not meta.sword.attackSpeed then
+			return 0.3
+		end
+		
+		CurrentDelay = math.clamp(math.clamp(meta.sword.attackSpeed - math.min(math.clamp(lplr:GetNetworkPing(), 0, 1) * 0.5, meta.sword.attackSpeed * 0.35), 0.05, 2) + 16.67, 0.05, 2)
+		return CurrentDelay
 	end
 
 	Killaura = vape.Categories.Blatant:CreateModule({
@@ -2185,19 +2194,23 @@ run(function()
 									store.attackReach = (delta.Magnitude * 100) // 1 / 100
 									store.attackReachUpdate = tick() + 1
 
-									AttackRemote:FireServer({
-										weapon = sword.tool,
-										chargedAttack = {chargeRatio = 0},
-										entityInstance = v.Character,
-										validate = {
-											raycast = {
-												cameraPosition = {value = pos},
-												cursorDirection = {value = dir}
-											},
-											targetPosition = {value = actualRoot.Position},
-											selfPosition = {value = pos}
-										}
-									})
+									if tick() - AttackDelay > CurrentDelay then
+										AttackDelay = tick() + calcHitreg(meta)
+
+										AttackRemote:FireServer({
+											weapon = sword.tool,
+											chargedAttack = {chargeRatio = 0},
+											entityInstance = v.Character,
+											validate = {
+												raycast = {
+													cameraPosition = {value = pos},
+													cursorDirection = {value = dir}
+												},
+												targetPosition = {value = actualRoot.Position},
+												selfPosition = {value = pos}
+											}
+										})
+									end
 								end
 							end
 						end
@@ -2262,8 +2275,8 @@ run(function()
 	SwingRange = Killaura:CreateSlider({
 		Name = 'Swing range',
 		Min = 1,
-		Max = 28,
-		Default = 28,
+		Max = 20,
+		Default = 20,
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
@@ -2271,8 +2284,8 @@ run(function()
 	AttackRange = Killaura:CreateSlider({
 		Name = 'Attack range',
 		Min = 1,
-		Max = 28,
-		Default = 28,
+		Max = 18,
+		Default = 18,
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
