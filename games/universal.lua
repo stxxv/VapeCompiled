@@ -12,7 +12,7 @@ local isfile = isfile or function(file)
 	return suc and res ~= nil and res ~= ''
 end
 local function createDownloader(text)
-	local downloader = vape.Downloader
+	local downloader = shared.vape.Downloader
 	if not downloader then
 		downloader = Instance.new('TextLabel')
 		downloader.BackgroundTransparency = 1
@@ -21,8 +21,8 @@ local function createDownloader(text)
 		downloader.TextColor3 = Color3.new(1, 1, 1)
 		downloader.TextSize = 20
 		downloader.TextStrokeTransparency = 0
-		downloader.Parent = vape.gui
-		vape.Downloader = downloader
+		downloader.Parent = shared.vape.gui
+		shared.vape.Downloader = downloader
 	end
 
 	downloader.Text = 'Downloading '..text
