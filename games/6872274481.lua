@@ -2066,8 +2066,8 @@ run(function()
 		if not meta or not meta.sword or not meta.sword.attackSpeed then
 			return 0.3
 		end
-		
-		CurrentDelay = math.clamp(math.clamp(meta.sword.attackSpeed - math.min(math.clamp(lplr:GetNetworkPing(), 0, 1) * 0.5, meta.sword.attackSpeed * 0.35), 0.05, 2) + 16.67, 0.05, 2)
+
+		CurrentDelay = math.clamp(math.min(math.clamp(math.clamp(meta.sword.attackSpeed - math.min(math.clamp(lplr:GetNetworkPing(), 0, 1) * 0.5, meta.sword.attackSpeed * 0.35), 0.05, 2) + 16.67, 0.05, 2) / 4, 1 / 30), 1 / 60, 0.1)
 		return CurrentDelay
 	end
 
