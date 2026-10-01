@@ -739,7 +739,7 @@ run(function()
 		end
 	})
 
-	local remoteNames, preDumped = {
+	local remoteNames = {
 		AfkStatus = debug.getproto(Knit.Controllers.AfkController.KnitStart, 1),
 		AttackEntity = Knit.Controllers.SwordController.sendServerRequest,
 		BeePickup = Knit.Controllers.BeeNetController.trigger,
@@ -784,7 +784,10 @@ run(function()
 	end
 
 	for i, v in remoteNames do
-		if type(v) == 'string' then continue end
+		if type(v) == 'string' then
+			remotes[i] = remote
+			continue
+		end
 		
 		local remote = dumpRemote(debug.getconstants(v))
 		if remote == '' then
@@ -794,7 +797,7 @@ run(function()
 		remotes[i] = remote
 	end
 
-	for i,v in ipairs(remoteNames) do
+	for i,v in remoteNames do
 		print(i,v)
 	end
 
