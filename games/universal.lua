@@ -11,20 +11,37 @@ local isfile = isfile or function(file)
 	end)
 	return suc and res ~= nil and res ~= ''
 end
-local function downloadFile(path, func)
+local function createDownloader(text)
+	local downloader = vape.Downloader
+	if not downloader then
+		downloader = Instance.new('TextLabel')
+		downloader.BackgroundTransparency = 1
+		downloader.FontFace = uipallet.Font
+		downloader.Size = UDim2.new(1, 0, 0, 40)
+		downloader.TextColor3 = Color3.new(1, 1, 1)
+		downloader.TextSize = 20
+		downloader.TextStrokeTransparency = 0
+		downloader.Parent = vape.gui
+		vape.Downloader = downloader
+	end
+
+	downloader.Text = 'Downloading '..text
+end
+local function downloadFile(path, callback)
 	if not isfile(path) then
-		local suc, res = pcall(function()
+		createDownloader(path)
+		local success, data = pcall(function()
 			return game:HttpGet('https://raw.githubusercontent.com/stxxv/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
 		end)
-		if not suc or res == '404: Not Found' then
-			error(res)
+		if not success or data == '404: Not Found' then
+			error(data)
 		end
 		if path:find('.lua') then
-			res = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..res
+			data = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..data
 		end
-		writefile(path, res)
+		writefile(path, data)
 	end
-	return (func or readfile)(path)
+	return (callback or readfile)(path)
 end
 local run = function(func)
 	func()

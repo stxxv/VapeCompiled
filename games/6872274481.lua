@@ -1,6 +1,3 @@
-local run = function(func)
-	func()
-end
 local cloneref = cloneref or function(obj)
 	return obj
 end
@@ -65,6 +62,8 @@ local InfiniteFly = {}
 local TrapDisabler
 local AntiFallPart
 local bedwars, remotes, sides, oldinvrender, oldSwing = {}, {}, {}
+getgenv().bedwars = bedwars
+getgenv().remotes = remotes
 
 local function addBlur(parent)
 	local blur = Instance.new('ImageLabel')
@@ -330,8 +329,42 @@ local function isTarget(plr)
 	return table.find(vape.Categories.Targets.ListEnabled, plr.Name) and true
 end
 
-local function notif(...) return
-	vape:CreateNotification(...)
+local function notif(...)
+	return vape:CreateNotification(...) -- how did that jank solution work for so long
+end
+
+local function createDownloader(text)
+	local downloader = vape.Downloader
+	if not downloader then
+		downloader = Instance.new('TextLabel')
+		downloader.BackgroundTransparency = 1
+		downloader.FontFace = uipallet.Font
+		downloader.Size = UDim2.new(1, 0, 0, 40)
+		downloader.TextColor3 = Color3.new(1, 1, 1)
+		downloader.TextSize = 20
+		downloader.TextStrokeTransparency = 0
+		downloader.Parent = vape.gui
+		vape.Downloader = downloader
+	end
+
+	downloader.Text = 'Downloading '..text
+end
+
+local function downloadFile(path, callback)
+	if not isfile(path) then
+		createDownloader(path)
+		local success, data = pcall(function()
+			return game:HttpGet('https://raw.githubusercontent.com/stxxv/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+		end)
+		if not success or data == '404: Not Found' then
+			error(data)
+		end
+		if path:find('.lua') then
+			data = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..data
+		end
+		writefile(path, data)
+	end
+	return (callback or readfile)(path)
 end
 
 local function removeTags(str)
@@ -433,6 +466,17 @@ local sortmethods = {
 		return angle < angle2
 	end
 }
+
+local function run(func)
+    local suc, res = pcall(func)
+    
+    if not suc then
+        notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
+        return
+    end
+
+    return res
+end
 
 run(function()
 	local oldstart = entitylib.start
@@ -833,6 +877,7 @@ run(function()
 		Pathfinding using a luau version of dijkstra's algorithm
 		Source: https://stackoverflow.com/questions/39355587/speeding-up-dijkstras-algorithm-to-solve-a-3d-maze
 	]]
+	
 	local function calculatePath(target, blockpos)
 		if cache[blockpos] then
 			return unpack(cache[blockpos])
