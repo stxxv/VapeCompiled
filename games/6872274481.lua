@@ -2050,7 +2050,7 @@ run(function()
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
 	local Hitreg
-	local AttackRemote, AttackDelays = {FireServer = function() end}, {}
+	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
 	end)
