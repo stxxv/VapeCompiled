@@ -2625,7 +2625,7 @@ run(function()
 			launchProjectile(item, pos, 'grappling_hook_projectile', 140, dir)
 		end,
 		jade_hammer = function(item, _, dir)
-			local hammer = (item.itemType:find('jade_hammmer') and 'jade_hammer') or item.itemType
+			local hammer = (item.itemType:find('jade_hammer') and 'jade_hammer') or item.itemType
 			if not bedwars.AbilityController:canUseAbility(hammer..'_jump') then
 				repeat task.wait() until bedwars.AbilityController:canUseAbility(hammer..'_jump') or not LongJump.Enabled
 			end
