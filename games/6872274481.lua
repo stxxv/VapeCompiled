@@ -6549,7 +6549,7 @@ run(function()
 		}))
 		count += 1
 	end
-	TierCheck = AutoBuy:CreateToggle({Name = 'Tier Check'})
+	TierCheck = {Enabled = true}
 	BedwarsCheck = AutoBuy:CreateToggle({
 		Name = 'Only Bedwars',
 		Function = function()
