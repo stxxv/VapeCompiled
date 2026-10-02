@@ -187,7 +187,7 @@ function module.solveQuartic(c0, c1, c2, c3, c4)
 	return {s3, s2, s1, s0}
 end
 
---[[function module.NewTrajectory(
+function module.NewTrajectory(
 	origin: Vector3,
 	originVelo: Vector3,
 	gravity: Vector3,
@@ -232,9 +232,9 @@ end
 
 function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, targetVelocity, playerGravity, playerHeight, playerJump, params)
 	return module.NewTrajectory(origin, Vector3.zero, Vector3.new(0, -gravity, 0), targetPos, targetVelocity, Vector3.zero, projectileSpeed)
-end]]
+end
 
-function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, targetVelocity, playerGravity, playerHeight, playerJump, params)
+--[[function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, targetVelocity, playerGravity, playerHeight, playerJump, params)
 	local disp = targetPos - origin
 	local p, q, r = targetVelocity.X, targetVelocity.Y, targetVelocity.Z
 	local h, j, k = disp.X, disp.Y, disp.Z
@@ -293,6 +293,6 @@ function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, tar
 		local f = (k + r*t)/t
 		return origin + Vector3.new(d, e, f)
 	end
-end
+end]]
 
 return module
