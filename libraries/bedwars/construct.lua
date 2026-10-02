@@ -36,10 +36,10 @@ local function ceCheck()
         return true
     end
 
-    local exec = getexecutorname() or 'none'
-	if string.find(string.lower(exec), 'xeno') or string.find(string.lower(exec), 'solara') or string.find(string.lower(exec), 'jjsploit') or string.find(string.lower(exec), 'none') then -- stav, if the exec has no identity, assume its a cheatengine exec
-		return true
-	end
+    local exec = string.lower(getexecutorname()) or 'none'
+    if table.find({'xeno', 'solara', 'none'}, exec) then
+        return true
+    end
 	
 	local request = http and http.request or http_request or request or httprequest
 	local req = request({
@@ -54,7 +54,7 @@ local function ceCheck()
 		local data = httpService:JSONDecode(req.Body)
 
 		for i,v in data.headers do
-			if string.find(string.lower(i), 'xeno') then
+			if string.find(i, 'xeno') then
 				return true
 			end
 		end
@@ -71,7 +71,43 @@ local function ceCheck()
 	return false
 end
 
-local ce = ceCheck()
+local ce, remoteNames = ceCheck(), {
+    AfkStatus = 'AfkInfo',
+    AttackEntity = 'SwordHit',
+    BeePickup = 'PickUpBee',
+    CannonAim = 'AimCannon',
+    CannonLaunch = 'LaunchSelfFromCannon',
+    ConsumeBattery = 'ConsumeBattery',
+    ConsumeItem = 'ConsumeItem',
+    ConsumeSoul = 'ConsumeGrimReaperSoul',
+    ConsumeTreeOrb = 'ConsumeTreeOrb',
+    DepositPinata = 'DepositCoins',
+    DragonBreath = 'DragonBreath',
+    DragonEndFly = 'VoidDragonEndFlying',
+    DragonFly = 'DragonFlap',
+    DropItem = 'DropItem',
+    EquipItem = 'SetInvItem',
+    FireProjectile = 'ProjectileFire',
+    GroundHit = 'GroundHit',
+    GuitarHeal = 'PlayGuitar',
+    HannahKill = 'HannahPromptTrigger',
+    HarvestCrop = 'CropHarvest',
+    KaliyahPunch = 'RequestDragonPunch',
+    MageSelect = 'LearnElementTome',
+    MinerDig = 'DestroyPetrifiedPlayer',
+    PickupItem = 'PickupItemDrop',
+    PickupMetal = 'CollectCollectableEntity',
+    ReportPlayer = 'ReportPlayer',
+    ResetCharacter = 'ResetCharacter',
+    SpawnRaven = 'SpawnRaven',
+    SummonerClawAttack = 'SummonerClawAttackRequest',
+    WarlockTarget = 'WarlockLinkTarget'
+}
+
+for i, v in remoteNames do
+    remotes[i] = v
+end
+
 if not ce then
     run(function()
         local KnitInit, Knit
@@ -157,43 +193,6 @@ if not ce then
                 return rawget(self, ind)
             end
         })
-
-        local remoteNames = {
-            AfkStatus = 'AfkInfo',
-            AttackEntity = 'SwordHit',
-            BeePickup = 'PickUpBee',
-            CannonAim = 'AimCannon',
-            CannonLaunch = 'LaunchSelfFromCannon',
-            ConsumeBattery = 'ConsumeBattery',
-            ConsumeItem = 'ConsumeItem',
-            ConsumeSoul = 'ConsumeGrimReaperSoul',
-            ConsumeTreeOrb = 'ConsumeTreeOrb',
-            DepositPinata = 'DepositCoins',
-            DragonBreath = 'DragonBreath',
-            DragonEndFly = 'VoidDragonEndFlying',
-            DragonFly = 'DragonFlap',
-            DropItem = 'DropItem',
-            EquipItem = 'SetInvItem',
-            FireProjectile = 'ProjectileFire',
-            GroundHit = 'GroundHit',
-            GuitarHeal = 'PlayGuitar',
-            HannahKill = 'HannahPromptTrigger',
-            HarvestCrop = 'CropHarvest',
-            KaliyahPunch = 'RequestDragonPunch',
-            MageSelect = 'LearnElementTome',
-            MinerDig = 'DestroyPetrifiedPlayer',
-            PickupItem = 'PickupItemDrop',
-            PickupMetal = 'CollectCollectableEntity',
-            ReportPlayer = 'ReportPlayer',
-            ResetCharacter = 'ResetCharacter',
-            SpawnRaven = 'SpawnRaven',
-            SummonerClawAttack = 'SummonerClawAttackRequest',
-            WarlockTarget = 'WarlockLinkTarget'
-        }
-
-        for i, v in remoteNames do
-            remotes[i] = v
-        end
 
         OldBreak = bedwars.BlockController.isBlockBreakable
         Client.Get = function(self, remoteName)
@@ -614,3 +613,30 @@ if not ce then
 
     return
 end
+
+--[[
+
+    Emulation in order
+
+]]
+
+local abilityCd = os.clock()
+bedwars.AbilityController = {
+    canUseAbility = function(self)
+        if abilityCd >= os.clock() then
+            abilityCd = os.clock() + 4
+            return true
+        end
+
+        return false
+    end,
+    useAbility = function(self, ...)
+        replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility:FireServer(...)
+    end
+}
+
+bedwars.BowConstantsTable = { -- stav, to-do: hardcode values if they change method
+    RelX = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelX'),
+    RelY = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelY'),
+    RelZ = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelZ')
+}

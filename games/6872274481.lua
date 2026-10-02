@@ -156,9 +156,9 @@ local function getBow()
 	return bestBow, bestBowSlot
 end
 
-local function getItem(itemName, inv)
+local function getItem(itemName, inv, find)
 	for slot, item in (inv or store.inventory.inventory.items) do
-		if item.itemType == itemName then
+		if item.itemType == itemName or (find and item.itemType:find(itemName)) then
 			return item, slot
 		end
 	end
@@ -166,7 +166,7 @@ local function getItem(itemName, inv)
 end
 
 local function getRoactRender(func)
-	return debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)
+	return (debug.getupvalue and debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)) or nil
 end
 
 local function getSword()
@@ -2625,12 +2625,13 @@ run(function()
 			launchProjectile(item, pos, 'grappling_hook_projectile', 140, dir)
 		end,
 		jade_hammer = function(item, _, dir)
-			if not bedwars.AbilityController:canUseAbility(item.itemType..'_jump') then
-				repeat task.wait() until bedwars.AbilityController:canUseAbility(item.itemType..'_jump') or not LongJump.Enabled
+			local hammer = (item.itemType:find('jade_hammmer') and 'jade_hammer') or item.itemType
+			if not bedwars.AbilityController:canUseAbility(hammer..'_jump') then
+				repeat task.wait() until bedwars.AbilityController:canUseAbility(hammer..'_jump') or not LongJump.Enabled
 			end
 	
-			if bedwars.AbilityController:canUseAbility(item.itemType..'_jump') and LongJump.Enabled then
-				bedwars.AbilityController:useAbility(item.itemType..'_jump')
+			if bedwars.AbilityController:canUseAbility(hammer..'_jump') and LongJump.Enabled then
+				bedwars.AbilityController:useAbility(hammer..'_jump')
 				JumpSpeed = 1.4 * Value.Value
 				JumpTick = tick() + 2.5
 				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
@@ -2731,7 +2732,7 @@ run(function()
 				end
 	
 				for i, v in LongJumpMethods do
-					local item = getItem(i)
+					local item = getItem(i, nil, true)
 					if item or store.equippedKit == i then
 						task.spawn(v, item, start, (CameraDir.Enabled and gameCamera or entitylib.character.RootPart).CFrame.LookVector)
 						break
