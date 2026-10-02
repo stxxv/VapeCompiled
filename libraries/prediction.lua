@@ -2,7 +2,10 @@
 	Prediction Library
 	Source: https://devforum.roblox.com/t/predict-projectile-ballistics-including-gravity-and-motion/1842434
 	New Solver: https://devforum.roblox.com/t/trajectory-prediction/3350931
+
+	NOTICE: This library has been altered with artifical inteligence (Opencode - Big Pickle)
 ]]
+
 local module = {}
 local eps = 1e-9
 local function isZero(d)
@@ -234,65 +237,87 @@ function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, tar
 	return module.NewTrajectory(origin, Vector3.zero, Vector3.new(0, -gravity, 0), targetPos, targetVelocity, Vector3.zero, projectileSpeed)
 end]]
 
+--[[
+	targets do not travel in a straight line while they are airborne, a spam jumping
+	target is walked through the jump arc it is currently in and through the arcs it
+	repeats once it lands again so the predicted height stays on top of it
+]]
+local function jumpDisplacement(gravity, jump, velo, time)
+	local cycle = 2 * jump / gravity
+	local elapsed = (jump - velo) / gravity
+	local airborne = jump * elapsed - .5 * gravity * elapsed * elapsed
+
+	local current = elapsed + time
+	if current >= cycle then
+		current = current % cycle
+	end
+
+	return jump * current - .5 * gravity * current * current - airborne
+end
+
+--[[
+	vertical displacement of the target after `time` seconds, a target which is not
+	inside a jump arc keeps falling until it reaches the ground it departed from
+]]
+local function verticalDisplacement(playerGravity, playerJump, velo, time)
+	if not playerGravity or playerGravity <= 0 then
+		return velo * time
+	elseif playerJump and playerJump > 0 and math.abs(velo) <= playerJump then
+		return jumpDisplacement(playerGravity, playerJump, velo, time)
+	elseif velo > 0 then
+		local landed = -(velo * velo) / (2 * playerGravity)
+		local fallen = velo * time - .5 * playerGravity * time * time
+		return fallen < landed and landed or fallen
+	end
+
+	return velo * time
+end
+
 function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, targetVelocity, playerGravity, playerHeight, playerJump, params)
 	local disp = targetPos - origin
-	local p, q, r = targetVelocity.X, targetVelocity.Y, targetVelocity.Z
 	local h, j, k = disp.X, disp.Y, disp.Z
-	local l = -.5 * gravity
+	local p, q, r = targetVelocity.X, targetVelocity.Y, targetVelocity.Z
 
-	--attemped gravity calculation, may return to it in the future.
-	if math.abs(q) > 0.01 and playerGravity and playerGravity > 0 then
-		local estTime = (disp.Magnitude / projectileSpeed)
-		local origq = q
-		local origj = j
-		for i = 1, 100 do
-			q -= (.5 * playerGravity) * estTime
-			local velo = targetVelocity * 0.016
-			local ray = workspace.Raycast(workspace, Vector3.new(targetPos.X, targetPos.Y, targetPos.Z), Vector3.new(velo.X, (q * estTime) - playerHeight, velo.Z), params)
-			if ray then
-				local newTarget = ray.Position + Vector3.new(0, playerHeight, 0)
-				estTime -= math.sqrt(((targetPos - newTarget).Magnitude * 2) / playerGravity)
-				targetPos = newTarget
-				j = (targetPos - origin).Y
-				q = 0
-				break
-			else
-				break
-			end
+	if projectileSpeed <= 0 then
+		return
+	end
+
+	--[[ launch speed the shot needs to reach the spot the target is going to be in
+		after `time` seconds, aiming half of the drop above it lands the projectile
+		back down on that spot ]]
+	local function launchSpeed(time)
+		local drop = .5 * gravity * time
+		local x, z = (h + (p * time)) / time, (k + (r * time)) / time
+		local y = ((j + verticalDisplacement(playerGravity, playerJump or 0, q, time)) / time) + drop
+		return math.sqrt((x * x) + (y * y) + (z * z))
+	end
+
+	--[[ the target travels further the longer the shot takes and the shot takes longer
+		the further the target travels, a bouncing target makes the launch speed dip in
+		and back out of reach, so the time is scanned for the first spot the shot fits
+		and then bisected down onto it ]]
+	local low, high = 0, 0.02
+	while high <= 3 and launchSpeed(high) > projectileSpeed do
+		low = high
+		high = high + 0.02
+	end
+
+	if launchSpeed(high) > projectileSpeed then
+		return
+	end
+
+	for i = 1, 10 do
+		local mid = (low + high) / 2
+		if launchSpeed(mid) > projectileSpeed then
+			low = mid
+		else
+			high = mid
 		end
 	end
 
-	local solutions = module.solveQuartic(
-		l*l,
-		-2*q*l,
-		q*q - 2*j*l - projectileSpeed*projectileSpeed + p*p + r*r,
-		2*j*q + 2*h*p + 2*k*r,
-		j*j + h*h + k*k
-	)
-	if solutions then
-		local posRoots = table.create(2)
-		for _, v in solutions do --filter out the negative roots
-			if v > 0 then
-				table.insert(posRoots, v)
-			end
-		end
-
-		posRoots[1] = posRoots[1]
-
-		if posRoots[1] then
-			local t = posRoots[1]
-			local d = (h + p*t)/t
-			local e = (j + q*t - l*t*t)/t
-			local f = (k + r*t)/t
-			return origin + Vector3.new(d, e, f)
-		end
-	elseif gravity == 0 then
-		local t = (disp.Magnitude / projectileSpeed)
-		local d = (h + p*t)/t
-		local e = (j + q*t - l*t*t)/t
-		local f = (k + r*t)/t
-		return origin + Vector3.new(d, e, f)
-	end
+	local time = high
+	local bounce = verticalDisplacement(playerGravity, playerJump, q, time)
+	return origin + Vector3.new(h + (p * time), j + bounce + (.5 * gravity * time * time), k + (r * time))
 end
 
 return module
