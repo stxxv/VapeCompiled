@@ -240,70 +240,11 @@ function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, tar
 	local h, j, k = disp.X, disp.Y, disp.Z
 	local l = -.5 * gravity
 
-	--attemped gravity calculation, may return to it in the future.
-	if math.abs(q) > 0.01 and playerGravity and playerGravity > 0 then
-		local gravity = playerGravity
-		local speed = projectileSpeed
-		local relative = targetPos - origin
-		local velocity = targetVelocity
-
-		local c4 = 0.25 * gravity * gravity
-		local c3 = -gravity * velocity.Y
-		local c2 = velocity:Dot(velocity) - (relative.Y * gravity) - (speed * speed)
-		local c1 = 2 * relative:Dot(velocity)
-		local c0 = relative:Dot(relative)
-
-		local estTime = (disp.Magnitude / projectileSpeed)
-		local origq = q
-		local origj = j
-
-		local maxTime = math.max(2, estTime * 8)
-		local lastTime = 0.0001
-
-		local lastValue = (((c4 * lastTime + c3) * lastTime + c2) * lastTime + c1) * lastTime + c0
-
-		for i = 1, 128 do
-			local time = (maxTime / 128) * i
-			local value = (((c4 * time + c3) * time + c2) * time + c1) * time + c0
-
-			if (lastValue < 0 and value > 0) or (lastValue > 0 and value < 0) then
-				local low = lastTime
-				local high = time
-
-				for j = 1, 64 do
-					local mid = (low + high) * 0.5
-					local midValue = (((c4 * mid + c3) * mid + c2) * mid + c1) * mid + c0
-
-					if (lastValue < 0 and midValue < 0) or (lastValue > 0 and midValue > 0) then
-						low = mid
-						lastValue = midValue
-					else
-						high = mid
-					end
-				end
-
-				estTime = (low + high) * 0.5
-				break
-			end
-
-			lastTime = time
-			lastValue = value
-		end
-
-		targetPos = targetPos + (targetVelocity * estTime)
-
-		q = ((targetPos - origin).Y + (0.5 * playerGravity * estTime * estTime)) / estTime
-		j = (targetPos - origin).Y
+	if playerGravity and playerGravity > 0 then
+		l = .5 * (gravity - playerGravity)
 	end
 
-
-	local solutions = module.solveQuartic(
-		l*l,
-		-2*q*l,
-		q*q - 2*j*l - projectileSpeed*projectileSpeed + p*p + r*r,
-		2*j*q + 2*h*p + 2*k*r,
-		j*j + h*h + k*k
-	)
+	local solutions = module.solveQuartic(l*l, 2*q*l, q*q + 2*j*l - projectileSpeed*projectileSpeed + p*p + r*r, 2*j*q + 2*h*p + 2*k*r, j*j + h*h + k*k)
 	if solutions then
 		local posRoots = table.create(2)
 		for _, v in solutions do --filter out the negative roots
@@ -317,14 +258,14 @@ function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, tar
 		if posRoots[1] then
 			local t = posRoots[1]
 			local d = (h + p*t)/t
-			local e = (j + q*t - l*t*t)/t
+			local e = (j + q*t + l*t*t)/t
 			local f = (k + r*t)/t
 			return origin + Vector3.new(d, e, f)
 		end
 	elseif gravity == 0 then
 		local t = (disp.Magnitude / projectileSpeed)
 		local d = (h + p*t)/t
-		local e = (j + q*t - l*t*t)/t
+		local e = (j + q*t + l*t*t)/t
 		local f = (k + r*t)/t
 		return origin + Vector3.new(d, e, f)
 	end
