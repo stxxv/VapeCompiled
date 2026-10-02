@@ -2717,8 +2717,7 @@ run(function()
 	
 					if root and isnetworkowner(root) then
 						if JumpTick > tick() then
-							root.CFrame += Direction * math.max((JumpTick - tick()) > 1.1 and JumpSpeed or 0) * dt
-							root.AssemblyLinearVelocity = (Direction * getSpeed()) + Vector3.new(0, 15, 0)
+							root.AssemblyLinearVelocity = (Direction * (getSpeed() + (JumpTick - tick()) > 1.1 and JumpSpeed or 0)) + Vector3.new(0, 15, 0)
 	
 							start = nil
 						else
