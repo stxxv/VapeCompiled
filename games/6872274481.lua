@@ -2631,7 +2631,13 @@ run(function()
 			end
 	
 			if bedwars.AbilityController:canUseAbility(hammer..'_jump') and LongJump.Enabled then
+				switchItem(item.tool, 0)
+				lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				start = pos + Vector3.new(0, 3.1, 0)
+	
+				task.wait(.1)
 				bedwars.AbilityController:useAbility(hammer..'_jump')
+				
 				JumpSpeed = 1.4 * Value.Value
 				JumpTick = tick() + 2.5
 				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
