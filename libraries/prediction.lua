@@ -242,60 +242,25 @@ function module.SolveTrajectory(origin, projectileSpeed, gravity, targetPos, tar
 
 	--attemped gravity calculation, may return to it in the future.
 	if math.abs(q) > 0.01 and playerGravity and playerGravity > 0 then
-		local gravity = playerGravity
-		local speed = projectileSpeed
-		local relative = targetPos - origin
-		local velocity = targetVelocity
-
-		local c4 = 0.25 * gravity * gravity
-		local c3 = -gravity * velocity.Y
-		local c2 = velocity:Dot(velocity) - (relative.Y * gravity) - (speed * speed)
-		local c1 = 2 * relative:Dot(velocity)
-		local c0 = relative:Dot(relative)
-
 		local estTime = (disp.Magnitude / projectileSpeed)
 		local origq = q
 		local origj = j
-
-		local maxTime = math.max(2, estTime * 8)
-		local lastTime = 0.0001
-
-		local lastValue = (((c4 * lastTime + c3) * lastTime + c2) * lastTime + c1) * lastTime + c0
-
-		for i = 1, 128 do
-			local time = (maxTime / 128) * i
-			local value = (((c4 * time + c3) * time + c2) * time + c1) * time + c0
-
-			if (lastValue < 0 and value > 0) or (lastValue > 0 and value < 0) then
-				local low = lastTime
-				local high = time
-
-				for j = 1, 64 do
-					local mid = (low + high) * 0.5
-					local midValue = (((c4 * mid + c3) * mid + c2) * mid + c1) * mid + c0
-
-					if (lastValue < 0 and midValue < 0) or (lastValue > 0 and midValue > 0) then
-						low = mid
-						lastValue = midValue
-					else
-						high = mid
-					end
-				end
-
-				estTime = (low + high) * 0.5
+		for i = 1, 100 do
+			q -= (.5 * playerGravity) * estTime
+			local velo = targetVelocity * 0.016
+			local ray = workspace.Raycast(workspace, Vector3.new(targetPos.X, targetPos.Y, targetPos.Z), Vector3.new(velo.X, (q * estTime) - playerHeight, velo.Z), params)
+			if ray then
+				local newTarget = ray.Position + Vector3.new(0, playerHeight, 0)
+				estTime -= math.sqrt(((targetPos - newTarget).Magnitude * 2) / playerGravity)
+				targetPos = newTarget
+				j = (targetPos - origin).Y
+				q = 0
+				break
+			else
 				break
 			end
-
-			lastTime = time
-			lastValue = value
 		end
-
-		targetPos = targetPos + (targetVelocity * estTime)
-
-		q = ((targetPos - origin).Y + (0.5 * playerGravity * estTime * estTime)) / estTime
-		j = (targetPos - origin).Y
 	end
-
 
 	local solutions = module.solveQuartic(
 		l*l,
