@@ -857,6 +857,10 @@ run(function()
 		return OldBreak(self, breakTable, plr)
 	end
 
+	bedwars.SoundManager.playSound = function(self, ...)
+		return self:playAudio(...)
+	end
+
 	local cache, blockhealthbar = {}, {blockHealth = -1, breakingBlockPosition = Vector3.zero}
 	store.blockPlacer = bedwars.BlockPlacer.new(bedwars.BlockEngine, 'wool_white')
 
@@ -2713,12 +2717,9 @@ run(function()
 	
 					if root and isnetworkowner(root) then
 						if JumpTick > tick() then
-							root.AssemblyLinearVelocity = Direction * (getSpeed() + ((JumpTick - tick()) > 1.1 and JumpSpeed or 0)) + Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
-							if entitylib.character.Humanoid.FloorMaterial == Enum.Material.Air and not start then
-								root.AssemblyLinearVelocity += Vector3.new(0, dt * (workspace.Gravity - 23), 0)
-							else
-								root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, 15, root.AssemblyLinearVelocity.Z)
-							end
+							root.CFrame += Direction * math.max((JumpTick - tick()) > 1.1 and JumpSpeed or 0)
+							root.AssemblyLinearVelocity = (Direction * getSpeed()) + Vector3.new(0, 15, 0)
+							
 							start = nil
 						else
 							if start then
