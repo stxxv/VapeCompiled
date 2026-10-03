@@ -66,6 +66,7 @@ local AntiFallPart
 local bedwars, remotes, sides, oldinvrender, oldSwing = {}, {}, {}
 getgenv().bedwars = bedwars
 getgenv().remotes = remotes
+getgenv().sides = sides
 
 local function addBlur(parent)
 	local blur = Instance.new('ImageLabel')
