@@ -634,6 +634,12 @@ bedwars.BalloonController = {
     deflateBalloon = function(self) end
 }
 
+bedwars.BlockBreakController = {
+    blockBreaker = {
+        setCooldown = function(self) end
+    }
+}
+
 bedwars.BowConstantsTable = { -- stav, to-do: hardcode values if they change method
     RelX = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelX'),
     RelY = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelY'),
