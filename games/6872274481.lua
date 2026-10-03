@@ -68,6 +68,11 @@ getgenv().bedwars = bedwars
 getgenv().remotes = remotes
 getgenv().sides = sides
 
+getgenv().Reach = Reach
+getgenv().HitBoxes = HitBoxes
+getgenv().InfiniteFly = InfiniteFly
+getgenv().TrapDisabler = TrapDisabler
+
 local function addBlur(parent)
 	local blur = Instance.new('ImageLabel')
 	blur.Name = 'Blur'
@@ -168,6 +173,7 @@ local function getItem(itemName, inv, find)
 	end
 	return nil
 end
+getgenv().getItem = getItem	
 
 local function getRoactRender(func)
 	return (debug.getupvalue and debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)) or nil
@@ -186,6 +192,7 @@ local function getSword()
 	end
 	return bestSword, bestSwordSlot
 end
+getgenv().getSword = getSword
 
 local function getTool(breakType)
 	local bestTool, bestToolSlot, bestToolDamage = nil, nil, 0
@@ -200,6 +207,7 @@ local function getTool(breakType)
 	end
 	return bestTool, bestToolSlot
 end
+getgenv().getTool = getTool
 
 local function getWool()
 	for _, wool in (inv or store.inventory.inventory.items) do
@@ -232,6 +240,7 @@ local function getPlacedBlock(pos)
 	local roundedPosition = bedwars.BlockController:getBlockPosition(pos)
 	return bedwars.BlockController:getStore():getBlockAt(roundedPosition), roundedPosition
 end
+getgenv().getPlacedBlock = getPlacedBlock
 
 local function getBlocksInPoints(s, e)
 	local blocks, list = bedwars.BlockController:getStore(), {}
@@ -395,6 +404,7 @@ local function switchItem(tool, delayTime)
 		return true
 	end
 end
+getgenv().switchItem = switchItem
 
 local function waitForChildOfType(obj, name, timeout, prop)
 	local check, returned = tick() + timeout
