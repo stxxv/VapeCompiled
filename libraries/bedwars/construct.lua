@@ -32,7 +32,7 @@ local function run(func)
 end
 
 local function ceCheck()
-    if not (require or debug.getupvalue or debug.getupvalues or debug.getconstants or debug.getconstant or debug.getproto or debug.getprotos) then
+    if not (require or debug.getupvalue or debug.getupvalues or debug.getconstants or debug.getconstant or debug.getproto or debug.getprotos or debug.setconstant) then
         return true
     end
 
