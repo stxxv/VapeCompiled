@@ -58,7 +58,7 @@ getgenv().store = {
 }
 
 local AntiFallPart
-local oldinvrender, oldSwing = {}, {}, {}
+local oldinvrender, oldSwing
 
 getgenv().bedwars = {}
 getgenv().remotes = {}

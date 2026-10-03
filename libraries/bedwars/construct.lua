@@ -200,7 +200,7 @@ if not ce then
             Roact = require(replicatedStorage['rbxts_include']['node_modules']['@rbxts']['roact'].src),
             RuntimeLib = require(replicatedStorage['rbxts_include'].RuntimeLib),
             SoundList = require(replicatedStorage.TS.sound['game-sound']).GameSound,
-            SoundManager = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out).SoundManager,
+            SoundManager = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out).AudioManager,
             Store = require(lplr.PlayerScripts.TS.ui.store).ClientStore,
             TeamUpgradeMeta = debug.getupvalue(require(replicatedStorage.TS.games.bedwars['team-upgrade']['team-upgrade-meta']).getTeamUpgradeMetaForQueue, 6),
             UILayers = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out).UILayers,
@@ -252,6 +252,10 @@ if not ce then
             return call
         end
 
+        bedwars.SoundManager.playSound = function(self, ...)
+            return self:playAudio(...)
+        end
+        
         bedwars.BlockController.isBlockBreakable = function(self, breakTable, plr)
             local obj = bedwars.BlockController:getStore():getBlockAt(breakTable.blockPosition)
 
