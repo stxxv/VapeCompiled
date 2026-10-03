@@ -689,8 +689,9 @@ run(function()
 	if isfolder('newvape/libraries/bedwars') then
 		makefolder('newvape/libraries/bedwars')
 	end
-	
-	loadstring(downloadFile('newvape/libraries/bedwars/construct.lua'))()
+
+	local construct = loadstring(downloadFile('newvape/libraries/bedwars/construct.lua'))()
+	repeat task.wait() until construct ~= nil and construct.Loaded
 end)
 
 for _, v in {'AntiRagdoll', 'TriggerBot', 'SilentAim', 'AutoRejoin', 'Rejoin', 'Disabler', 'Timer', 'ServerHop', 'MouseTP', 'MurderMystery', 'Invisible', 'Swim'} do

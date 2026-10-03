@@ -12,9 +12,20 @@ end
 local replicatedStorage = cloneref(game:GetService('ReplicatedStorage'))
 local httpService = cloneref(game:GetService('HttpService'))
 local playersService = cloneref(game:GetService('Players'))
+local gameCamera = workspace.CurrentCamera
 local lplr = playersService.LocalPlayer
 
 local vape = shared.vape
+local entitylib = vape.Libraries.entity
+local targetinfo = vape.Libraries.targetinfo
+local sessioninfo = vape.Libraries.sessioninfo
+local uipallet = vape.Libraries.uipallet
+local tween = vape.Libraries.tween
+local color = vape.Libraries.color
+local whitelist = vape.Libraries.whitelist
+local prediction = vape.Libraries.prediction
+local getfontbounds = vape.Libraries.getfontbounds
+local getvapeasset = vape.Libraries.getvapeasset
 
 local function notif(args)
     return vape:CreateNotification(args)
@@ -612,7 +623,7 @@ if not ce then
         end)
     end)
 
-    return
+    return {loaded = true}
 end
 
 --[[
@@ -648,3 +659,5 @@ bedwars.BowConstantsTable = { -- stav, to-do: hardcode values if they change met
 }
 
 bedwars.StatefulEntityKnockbackController = {}
+
+return {loaded = false}
