@@ -255,7 +255,7 @@ if not ce then
         bedwars.SoundManager.playSound = function(self, ...)
             return self:playAudio(...)
         end
-        
+
         bedwars.BlockController.isBlockBreakable = function(self, breakTable, plr)
             local obj = bedwars.BlockController:getStore():getBlockAt(breakTable.blockPosition)
 
@@ -656,8 +656,12 @@ bedwars.AbilityController = {
 }
 
 bedwars.BalloonController = {
-    inflateBalloon = function(self) end,
-    deflateBalloon = function(self) end
+    inflateBalloon = function(self)
+		replicatedStorage.rbxts_include.node_modules['@rbxts'].net.out._NetManaged.InflateBalloon:FireServer()
+    end,
+    deflateBalloon = function(self)
+		replicatedStorage.rbxts_include.node_modules['@rbxts'].net.out._NetManaged.DeflateBalloon:FireServer()
+    end
 }
 
 bedwars.BlockBreakController = {
