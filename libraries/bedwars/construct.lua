@@ -37,15 +37,16 @@ local prediction = vape.Libraries.prediction
 local getfontbounds = vape.Libraries.getfontbounds
 local getvapeasset = vape.Libraries.getvapeasset
 
-local function notif(args)
+--[[local function notif(args)
     return vape:CreateNotification(args)
-end
+end]]
 
 local function run(func)
     local suc, res = pcall(func)
     
     if not suc then
-        notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
+        warn('[vapeforsolara] Module failed to load: '..tostring(res))
+        --notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
         return
     end
 
