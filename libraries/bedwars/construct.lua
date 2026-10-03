@@ -108,6 +108,7 @@ for i, v in remoteNames do
     remotes[i] = v
 end
 
+getgenv().ce = ce
 if not ce then
     run(function()
         local KnitInit, Knit
