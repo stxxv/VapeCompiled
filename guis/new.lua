@@ -1965,9 +1965,9 @@ function vape:LoadGUI()
 		NameShadow.Visible = false
 		NameShadow.Parent = Holder
 		for _, prop in {'Size', 'Text', 'FontFace'} do
-			Name:GetPropertyChangedSignal(prop):Connect(function()
+			TargetInfoOverlay:Clean(Name:GetPropertyChangedSignal(prop):Connect(function()
 				NameShadow[prop] = Name[prop]
-			end)
+			end))
 		end
 		Name.Parent = Holder
 		local HealthBKG = Instance.new('Frame')
@@ -1983,9 +1983,9 @@ function vape:LoadGUI()
 		Health.Position = UDim2.new()
 		Health.BackgroundColor3 = Color3.fromHSV(1 / 2.5, 0.89, 0.75)
 		Health.Parent = HealthBKG
-		Health:GetPropertyChangedSignal('Size'):Connect(function()
+		TargetInfoOverlay:Clean(Health:GetPropertyChangedSignal('Size'):Connect(function()
 			Health.Visible = Health.Size.X.Scale > 0.01
-		end)
+		end))
 		local Armor = Health:Clone()
 		Armor.Size = UDim2.new()
 		Armor.Position = UDim2.fromScale(1, 0)
@@ -1993,9 +1993,9 @@ function vape:LoadGUI()
 		Armor.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
 		Armor.Visible = false
 		Armor.Parent = HealthBKG
-		Armor:GetPropertyChangedSignal('Size'):Connect(function()
+		TargetInfoOverlay:Clean(Armor:GetPropertyChangedSignal('Size'):Connect(function()
 			Armor.Visible = Armor.Size.X.Scale > 0.01
-		end)
+		end))
 		local HealthBlur = addBlur(HealthBKG)
 		HealthBlur.Enabled = false
 		local Stroke = Instance.new('UIStroke')
@@ -3108,6 +3108,7 @@ components = {
 			Options = {},
 			Type = 'CategoryList'
 		}
+		addMaid(component)
 		props.Color = props.Color or Color3.fromRGB(5, 134, 105)
 		
 		local window = Instance.new('TextButton')
@@ -3267,13 +3268,13 @@ components = {
 				Cover = true
 			}, nil, profile)
 			profile.Bind.Object.Position = UDim2.new(1, -30, 0, 7)
-			profile.Bind.Triggered:Connect(function(isPressed)
+			component:Clean(profile.Bind.Triggered:Connect(function(isPressed)
 				if isPressed and vape.Profile ~= value then
 					vape:Save(value)
 					vape:Load(true)
 					self:ChangeValue()
 				end
-			end)
+			end))
 		
 			if data then
 				profile.Bind:Load(data)
@@ -3369,38 +3370,38 @@ components = {
 					name.Bind:SetParent(obj)
 					name.Enabled = name.Name == vape.Profile
 		
-					dotsbutton.MouseButton1Click:Connect(function()
+					component:Clean(dotsbutton.MouseButton1Click:Connect(function()
 						if not name.Enabled then
 							component:ChangeValue(name.Name)
 						end
-					end)
+					end))
 		
-					dotsbutton.MouseEnter:Connect(function()
+					component:Clean(dotsbutton.MouseEnter:Connect(function()
 						if not name.Enabled then
 							dots.ImageColor3 = uipallet.Text
 						end
-					end)
+					end))
 		
-					dotsbutton.MouseLeave:Connect(function()
+					component:Clean(dotsbutton.MouseLeave:Connect(function()
 						if not name.Enabled then
 							dots.ImageColor3 = color.Light(uipallet.Main, 0.37)
 						end
-					end)
+					end))
 		
 		
-					obj.MouseButton1Click:Connect(function()
+					component:Clean(obj.MouseButton1Click:Connect(function()
 						vape:Save(name.Name)
 						vape:Load(true)
 						self:ChangeValue()
-					end)
+					end))
 		
-					obj.MouseEnter:Connect(function()
+					component:Clean(obj.MouseEnter:Connect(function()
 						name.Bind:SetVisible(true)
-					end)
+					end))
 		
-					obj.MouseLeave:Connect(function()
+					component:Clean(obj.MouseLeave:Connect(function()
 						name.Bind:SetVisible(false)
-					end)
+					end))
 		
 					if name.Enabled then
 						self.Selected = obj
@@ -3464,33 +3465,33 @@ components = {
 					close.Parent = obj
 					addCorner(close, UDim.new(1, 0))
 		
-					close.MouseEnter:Connect(function()
+					component:Clean(close.MouseEnter:Connect(function()
 						close.ImageTransparency = 0.3
 						tween:Tween(close, uipallet.Tween, {
 							BackgroundTransparency = 0.6
 						})
-					end)
+					end))
 		
-					close.MouseLeave:Connect(function()
+					component:Clean(close.MouseLeave:Connect(function()
 						close.ImageTransparency = 0.5
 						tween:Tween(close, uipallet.Tween, {
 							BackgroundTransparency = 1
 						})
-					end)
+					end))
 		
-					close.MouseButton1Click:Connect(function()
+					component:Clean(close.MouseButton1Click:Connect(function()
 						component:ChangeValue(name)
-					end)
+					end))
 		
-					obj.MouseEnter:Connect(function()
+					component:Clean(obj.MouseEnter:Connect(function()
 						bkg.Visible = true
-					end)
+					end))
 		
-					obj.MouseLeave:Connect(function()
+					component:Clean(obj.MouseLeave:Connect(function()
 						bkg.Visible = false
-					end)
+					end))
 		
-					obj.MouseButton1Click:Connect(function()
+					component:Clean(obj.MouseButton1Click:Connect(function()
 						local index = table.find(self.ListEnabled, name)
 						if index then
 							table.remove(self.ListEnabled, index)
@@ -3503,7 +3504,7 @@ components = {
 						end
 		
 						props.Function()
-					end)
+					end))
 		
 					table.insert(self.Objects, obj)
 				end
@@ -3613,44 +3614,44 @@ components = {
 			end
 		end
 		
-		addbutton.MouseEnter:Connect(function()
+		component:Clean(addbutton.MouseEnter:Connect(function()
 			addbutton.ImageTransparency = 0
-		end)
+		end))
 		
-		addbutton.MouseLeave:Connect(function()
+		component:Clean(addbutton.MouseLeave:Connect(function()
 			addbutton.ImageTransparency = 0.3
-		end)
+		end))
 		
-		addbutton.MouseButton1Click:Connect(function()
+		component:Clean(addbutton.MouseButton1Click:Connect(function()
 			if not table.find(component.List, addvalue.Text) then
 				component:ChangeValue(addvalue.Text)
 				addvalue.Text = ''
 			end
-		end)
+		end))
 		
-		arrowbutton.MouseEnter:Connect(function()
+		component:Clean(arrowbutton.MouseEnter:Connect(function()
 			arrow.ImageColor3 = Color3.fromRGB(220, 220, 220)
-		end)
+		end))
 		
-		arrowbutton.MouseLeave:Connect(function()
+		component:Clean(arrowbutton.MouseLeave:Connect(function()
 			arrow.ImageColor3 = Color3.fromRGB(140, 140, 140)
-		end)
+		end))
 		
-		arrowbutton.MouseButton1Click:Connect(function()
+		component:Clean(arrowbutton.MouseButton1Click:Connect(function()
 			component:Expand()
-		end)
+		end))
 		
-		arrowbutton.MouseButton2Click:Connect(function()
+		component:Clean(arrowbutton.MouseButton2Click:Connect(function()
 			component:Expand()
-		end)
+		end))
 		
 		if autocomplete then
-			addvalue:GetPropertyChangedSignal('Text'):Connect(function()
+			component:Clean(addvalue:GetPropertyChangedSignal('Text'):Connect(function()
 				local plr = getPlayerFromText(addvalue.Text)
 				autocomplete.Text = plr and addvalue.Text..(plr:sub(#addvalue.Text + 1, #plr)) or ''
-			end)
+			end))
 		
-			addvalue.Focused:Connect(function()
+			component:Clean(addvalue.Focused:Connect(function()
 				vape.Autocomplete = function()
 					local newText = getPlayerFromText(addvalue.Text) or addvalue.Text
 					task.spawn(function()
@@ -3659,53 +3660,53 @@ components = {
 						addvalue.CursorPosition = #newText + 1
 					end)
 				end
-			end)
+			end))
 		end
 		
-		addvalue.FocusLost:Connect(function(enter)
+		component:Clean(addvalue.FocusLost:Connect(function(enter)
 			if enter and not table.find(component.List, addvalue.Text) then
 				component:ChangeValue(addvalue.Text)
 				addvalue.Text = ''
 			end
 		
 			vape.Autocomplete = nil
-		end)
+		end))
 		
-		addvalue.MouseEnter:Connect(function()
+		component:Clean(addvalue.MouseEnter:Connect(function()
 			tween:Tween(addbkg, uipallet.Tween, {
 				BackgroundColor3 = color.Light(uipallet.Main, 0.14)
 			})
-		end)
+		end))
 		
-		addvalue.MouseLeave:Connect(function()
+		component:Clean(addvalue.MouseLeave:Connect(function()
 			tween:Tween(addbkg, uipallet.Tween, {
 				BackgroundColor3 = color.Light(uipallet.Main, 0.02)
 			})
-		end)
+		end))
 		
-		children:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
+		component:Clean(children:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
 			divider.Visible = children.CanvasPosition.Y > 10 and children.Visible
-		end)
+		end))
 		
-		settings.MouseEnter:Connect(function()
+		component:Clean(settings.MouseEnter:Connect(function()
 			settings.ImageColor3 = uipallet.Text
-		end)
+		end))
 		
-		settings.MouseLeave:Connect(function()
+		component:Clean(settings.MouseLeave:Connect(function()
 			settings.ImageColor3 = color.Light(uipallet.Main, 0.37)
-		end)
+		end))
 		
-		settings.MouseButton1Click:Connect(function()
+		component:Clean(settings.MouseButton1Click:Connect(function()
 			childrentwo.Visible = not childrentwo.Visible
-		end)
+		end))
 		
-		window.InputBegan:Connect(function(input)
+		component:Clean(window.InputBegan:Connect(function(input)
 			if input.Position.Y < window.AbsolutePosition.Y + 41 and input.UserInputType == Enum.UserInputType.MouseButton2 then
 				component:Expand()
 			end
-		end)
+		end))
 		
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		component:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
@@ -3714,15 +3715,15 @@ components = {
 			if component.Expanded then
 				window.Size = UDim2.fromOffset(220, math.min(51 + windowlist.AbsoluteContentSize.Y / scale.Scale, 611))
 			end
-		end)
+		end))
 		
-		windowlisttwo:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		component:Clean(windowlisttwo:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
 		
 			childrentwo.Size = UDim2.fromOffset(220, windowlisttwo.AbsoluteContentSize.Y / scale.Scale)
-		end)
+		end))
 		
 		component.Button = vape.Categories.Main:CreateGUIButton({
 			Name = props.Name,
@@ -3746,6 +3747,7 @@ components = {
 			Rainbow = false,
 			Index = 0
 		}
+		addMaid(component)
 		
 		local function createExtraSlider(name, gradientColor)
 			local colorslidercustom = Instance.new('TextButton')
@@ -3796,7 +3798,7 @@ components = {
 			knob.Parent = knobholder
 			addCorner(knob, UDim.new(1, 0))
 		
-			colorslidercustom.InputBegan:Connect(function(input)
+			component:Clean(colorslidercustom.InputBegan:Connect(function(input)
 				if
 					(input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch)
 					and (input.Position.Y - colorslidercustom.AbsolutePosition.Y) > (20 * scale.Scale)
@@ -3816,19 +3818,19 @@ components = {
 						end
 					end)
 				end
-			end)
+			end))
 		
-			colorslidercustom.MouseEnter:Connect(function()
+			component:Clean(colorslidercustom.MouseEnter:Connect(function()
 				tween:Tween(knob, uipallet.Tween, {
 					Size = UDim2.fromOffset(16, 16)
 				})
-			end)
+			end))
 		
-			colorslidercustom.MouseLeave:Connect(function()
+			component:Clean(colorslidercustom.MouseLeave:Connect(function()
 				tween:Tween(knob, uipallet.Tween, {
 					Size = UDim2.fromOffset(14, 14)
 				})
-			end)
+			end))
 		
 			return colorslidercustom
 		end
@@ -4059,17 +4061,17 @@ components = {
 			end
 		end
 		
-		preview.MouseButton1Click:Connect(function()
+		component:Clean(preview.MouseButton1Click:Connect(function()
 			preview.Visible = false
 			custombox.Visible = true
 			custombox:CaptureFocus()
 		
 			local text = Color3.fromHSV(component.Hue, component.Sat, component.Value)
 			custombox.Text = math.round(text.R * 255)..', '..math.round(text.G * 255)..', '..math.round(text.B * 255)
-		end)
+		end))
 		
 		local doubleClick = os.clock()
-		colorslider.InputBegan:Connect(function(input)
+		component:Clean(colorslider.InputBegan:Connect(function(input)
 			if
 				(input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch)
 				and (input.Position.Y - colorslider.AbsolutePosition.Y) > (20 * scale.Scale)
@@ -4096,46 +4098,46 @@ components = {
 		
 				doubleClick = os.clock() + 0.3
 			end
-		end)
+		end))
 		
-		colorslider.MouseEnter:Connect(function()
+		component:Clean(colorslider.MouseEnter:Connect(function()
 			tween:Tween(knob, uipallet.Tween, {
 				Size = UDim2.fromOffset(16, 16)
 			})
-		end)
+		end))
 		
-		colorslider.MouseLeave:Connect(function()
+		component:Clean(colorslider.MouseLeave:Connect(function()
 			tween:Tween(knob, uipallet.Tween, {
 				Size = UDim2.fromOffset(14, 14)
 			})
-		end)
+		end))
 		
-		colorslider:GetPropertyChangedSignal('Visible'):Connect(function()
+		component:Clean(colorslider:GetPropertyChangedSignal('Visible'):Connect(function()
 			satSlider.Visible = icon.Rotation == 180 and colorslider.Visible
 			vibSlider.Visible = satSlider.Visible
 			opSlider.Visible = satSlider.Visible
-		end)
+		end))
 		
-		expand.MouseEnter:Connect(function()
+		component:Clean(expand.MouseEnter:Connect(function()
 			icon.ImageColor3 = color.Dark(uipallet.Text, 0.16)
-		end)
+		end))
 		
-		expand.MouseLeave:Connect(function()
+		component:Clean(expand.MouseLeave:Connect(function()
 			icon.ImageColor3 = color.Dark(uipallet.Text, 0.43)
-		end)
+		end))
 		
-		expand.MouseButton1Click:Connect(function()
+		component:Clean(expand.MouseButton1Click:Connect(function()
 			satSlider.Visible = not satSlider.Visible
 			vibSlider.Visible = satSlider.Visible
 			opSlider.Visible = satSlider.Visible
 			icon.Rotation = satSlider.Visible and 180 or 0
-		end)
+		end))
 		
-		rainbow.MouseButton1Click:Connect(function()
+		component:Clean(rainbow.MouseButton1Click:Connect(function()
 			component:Toggle()
-		end)
+		end))
 		
-		custombox.FocusLost:Connect(function(enter)
+		component:Clean(custombox.FocusLost:Connect(function(enter)
 			preview.Visible = true
 			custombox.Visible = false
 		
@@ -4153,7 +4155,7 @@ components = {
 					component:SetValue(parsed:ToHSV())
 				end
 			end
-		end)
+		end))
 		
 		api.Options[props.Name] = component
 		
@@ -5458,15 +5460,15 @@ components = {
 			end
 		end
 		
-		back.MouseEnter:Connect(function()
+		component:Clean(back.MouseEnter:Connect(function()
 			back.ImageColor3 = uipallet.Text
-		end)
+		end))
 		
-		back.MouseLeave:Connect(function()
+		component:Clean(back.MouseLeave:Connect(function()
 			back.ImageColor3 = color.Light(uipallet.Main, 0.37)
-		end)
+		end))
 		
-		back.MouseButton1Click:Connect(function()
+		component:Clean(back.MouseButton1Click:Connect(function()
 			tween:Tween(shadow, uipallet.Tween, {
 				BackgroundTransparency = 1
 			})
@@ -5478,25 +5480,25 @@ components = {
 			task.delay(0.2, function()
 				shadow.Visible = false
 			end)
-		end)
+		end))
 		
-		button.MouseEnter:Connect(function()
+		component:Clean(button.MouseEnter:Connect(function()
 			if not component.Enabled then
 				button.BackgroundColor3 = color.Light(uipallet.Main, 0.05)
 			end
-		end)
+		end))
 		
-		button.MouseLeave:Connect(function()
+		component:Clean(button.MouseLeave:Connect(function()
 			if not component.Enabled then
 				button.BackgroundColor3 = color.Light(uipallet.Main, 0.02)
 			end
-		end)
+		end))
 		
-		button.MouseButton1Click:Connect(function()
+		component:Clean(button.MouseButton1Click:Connect(function()
 			component:Toggle()
-		end)
+		end))
 		
-		button.MouseButton2Click:Connect(function()
+		component:Clean(button.MouseButton2Click:Connect(function()
 			shadow.Visible = true
 		
 			tween:Tween(shadow, uipallet.Tween, {
@@ -5506,9 +5508,9 @@ components = {
 			tween:Tween(settingspane, uipallet.Tween, {
 				Position = UDim2.new(1, -220, 0, 0)
 			})
-		end)
+		end))
 		
-		dotsbutton.MouseButton1Click:Connect(function()
+		component:Clean(dotsbutton.MouseButton1Click:Connect(function()
 			shadow.Visible = true
 		
 			tween:Tween(shadow, uipallet.Tween, {
@@ -5518,17 +5520,17 @@ components = {
 			tween:Tween(settingspane, uipallet.Tween, {
 				Position = UDim2.new(1, -220, 0, 0)
 			})
-		end)
+		end))
 		
-		dotsbutton.MouseEnter:Connect(function()
+		component:Clean(dotsbutton.MouseEnter:Connect(function()
 			dots.ImageColor3 = uipallet.Text
-		end)
+		end))
 		
-		dotsbutton.MouseLeave:Connect(function()
+		component:Clean(dotsbutton.MouseLeave:Connect(function()
 			dots.ImageColor3 = color.Light(uipallet.Main, 0.37)
-		end)
+		end))
 		
-		shadow.MouseButton1Click:Connect(function()
+		component:Clean(shadow.MouseButton1Click:Connect(function()
 			tween:Tween(shadow, uipallet.Tween, {
 				BackgroundTransparency = 1
 			})
@@ -5540,20 +5542,20 @@ components = {
 			task.delay(0.2, function()
 				shadow.Visible = false
 			end)
-		end)
+		end))
 		
-		shadow:GetPropertyChangedSignal('Visible'):Connect(function()
+		component:Clean(shadow:GetPropertyChangedSignal('Visible'):Connect(function()
 			tooltip.Visible = false
 			vape.LegitVisible = shadow.Visible
-		end)
+		end))
 		
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		component:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
 		
 			settingschildren.CanvasSize = UDim2.fromOffset(0, windowlist.AbsoluteContentSize.Y / scale.Scale)
-		end)
+		end))
 		
 		api.Modules[props.Name] = component
 		
@@ -5931,7 +5933,7 @@ components = {
 			end
 		end
 		
-		button.MouseEnter:Connect(function()
+		component:Clean(button.MouseEnter:Connect(function()
 			isHover = true
 			if not component.Enabled and not modulechildren.Visible then
 				button.TextColor3 = uipallet.Text
@@ -5939,9 +5941,9 @@ components = {
 			end
 		
 			component.Bind:SetVisible(isHover or modulechildren.Visible)
-		end)
+		end))
 		
-		button.MouseLeave:Connect(function()
+		component:Clean(button.MouseLeave:Connect(function()
 			isHover = false
 			if not component.Enabled and not modulechildren.Visible then
 				button.TextColor3 = color.Dark(uipallet.Text, 0.16)
@@ -5949,58 +5951,58 @@ components = {
 			end
 		
 			component.Bind:SetVisible(isHover or modulechildren.Visible)
-		end)
+		end))
 		
-		button.MouseButton1Click:Connect(function()
+		component:Clean(button.MouseButton1Click:Connect(function()
 			if vape.EditGUI then
 				return
 			end
 		
 			component:Toggle()
-		end)
+		end))
 		
-		button.MouseButton2Click:Connect(function()
+		component:Clean(button.MouseButton2Click:Connect(function()
 			modulechildren.Visible = not modulechildren.Visible
-		end)
+		end))
 		
-		dotsbutton.MouseButton1Click:Connect(function()
+		component:Clean(dotsbutton.MouseButton1Click:Connect(function()
 			modulechildren.Visible = not modulechildren.Visible
-		end)
+		end))
 		
-		dotsbutton.MouseButton2Click:Connect(function()
+		component:Clean(dotsbutton.MouseButton2Click:Connect(function()
 			modulechildren.Visible = not modulechildren.Visible
-		end)
+		end))
 		
-		dotsbutton.MouseEnter:Connect(function()
+		component:Clean(dotsbutton.MouseEnter:Connect(function()
 			if not component.Enabled then
 				dots.ImageColor3 = uipallet.Text
 			end
-		end)
+		end))
 		
-		dotsbutton.MouseLeave:Connect(function()
+		component:Clean(dotsbutton.MouseLeave:Connect(function()
 			if not component.Enabled then
 				dots.ImageColor3 = color.Light(uipallet.Main, 0.37)
 			end
-		end)
+		end))
 		
-		edit.MouseButton1Click:Connect(function()
+		component:Clean(edit.MouseButton1Click:Connect(function()
 			component:SetVisible(not component.Visible)
-		end)
+		end))
 		
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		component:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
 		
 			modulechildren.Size = UDim2.new(1, 0, 0, windowlist.AbsoluteContentSize.Y / scale.Scale)
-		end)
+		end))
 		
 		local bind = component:CreateBind({
 			Module = true,
 			Cover = true
 		})
 		
-		bind.Triggered:Connect(function(isDown)
+		component:Clean(bind.Triggered:Connect(function(isDown)
 			if bind.Hold then
 				if component.Enabled ~= isDown then
 					if vape.ToggleNotifications.Enabled then
@@ -6016,12 +6018,12 @@ components = {
 		
 				component:Toggle(true)
 			end
-		end)
+		end))
 		
 		if inputService.TouchEnabled then
 			local isHeld = false
 		
-			button.MouseButton1Down:Connect(function()
+			component:Clean(button.MouseButton1Down:Connect(function()
 				isHeld = true
 				local holdtime, holdPos = os.clock(), inputService:GetMouseLocation()
 				repeat
@@ -6044,7 +6046,7 @@ components = {
 					end
 		
 					local connection
-					connection = inputService.InputBegan:Connect(function(input)
+					connection = component:Clean(inputService.InputBegan:Connect(function(input)
 						if input.UserInputType == Enum.UserInputType.Touch then
 							if vape.ThreadFix then
 								setthreadidentity(8)
@@ -6062,13 +6064,13 @@ components = {
 		
 							connection:Disconnect()
 						end
-					end)
+					end))
 				end
-			end)
+			end))
 		
-			button.MouseButton1Up:Connect(function()
+			component:Clean(button.MouseButton1Up:Connect(function()
 				isHeld = false
-			end)
+			end))
 		end
 		
 		vape.Modules[props.Name] = component
@@ -6278,35 +6280,35 @@ components = {
 			component:Update()
 		end))
 		
-		dotsbutton.MouseEnter:Connect(function()
+		component:Clean(dotsbutton.MouseEnter:Connect(function()
 			if not children.Visible then
 				dots.ImageColor3 = uipallet.Text
 			end
-		end)
+		end))
 		
-		dotsbutton.MouseLeave:Connect(function()
+		component:Clean(dotsbutton.MouseLeave:Connect(function()
 			if not children.Visible then
 				dots.ImageColor3 = color.Light(uipallet.Main, 0.37)
 			end
-		end)
+		end))
 		
-		dotsbutton.MouseButton1Click:Connect(function()
+		component:Clean(dotsbutton.MouseButton1Click:Connect(function()
 			component:Expand(true)
-		end)
+		end))
 		
-		dotsbutton.MouseButton2Click:Connect(function()
+		component:Clean(dotsbutton.MouseButton2Click:Connect(function()
 			component:Expand(true)
-		end)
+		end))
 		
-		pin.MouseButton1Click:Connect(function()
+		component:Clean(pin.MouseButton1Click:Connect(function()
 			component:Pin()
-		end)
+		end))
 		
-		window.MouseButton2Click:Connect(function()
+		component:Clean(window.MouseButton2Click:Connect(function()
 			component:Expand(true)
-		end)
+		end))
 		
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		component:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
@@ -6315,7 +6317,7 @@ components = {
 			if component.Expanded then
 				window.Size = UDim2.fromOffset(window.Size.X.Offset, math.min(41 + windowlist.AbsoluteContentSize.Y / scale.Scale, 601))
 			end
-		end)
+		end))
 		
 		component.Children = customchildren
 		vape.Categories[props.Name] = component
@@ -7285,6 +7287,7 @@ components = {
 		textbox.Visible = props.Visible == nil or props.Visible
 		textbox.Parent = children
 		component.Object = textbox
+		addMaid(component)
 		addTooltip(textbox, props.Tooltip)
 		local title = Instance.new('TextLabel')
 		title.BackgroundTransparency = 1
@@ -7349,17 +7352,17 @@ components = {
 			props.Function(enter)
 		end
 		
-		textbox.MouseButton1Click:Connect(function()
+		component:Clean(textbox.MouseButton1Click:Connect(function()
 			inputbox:CaptureFocus()
-		end)
+		end))
 		
 		if autocomplete then
-			inputbox:GetPropertyChangedSignal('Text'):Connect(function()
+			component:Clean(inputbox:GetPropertyChangedSignal('Text'):Connect(function()
 				local plr = getPlayerFromText(inputbox.Text)
 				autocomplete.Text = plr and inputbox.Text..(plr:sub(#inputbox.Text + 1, #plr)) or ''
-			end)
+			end))
 		
-			inputbox.Focused:Connect(function()
+			component:Clean(inputbox.Focused:Connect(function()
 				vape.Autocomplete = function()
 					local newText = getPlayerFromText(inputbox.Text) or inputbox.Text
 					task.spawn(function()
@@ -7368,16 +7371,16 @@ components = {
 						inputbox.CursorPosition = #newText + 1
 					end)
 				end
-			end)
+			end))
 		end
 		
-		inputbox.FocusLost:Connect(function(enter)
+		component:Clean(inputbox.FocusLost:Connect(function(enter)
 			component:SetValue(inputbox.Text, enter)
-		end)
+		end))
 		
-		inputbox:GetPropertyChangedSignal('Text'):Connect(function()
+		component:Clean(inputbox:GetPropertyChangedSignal('Text'):Connect(function()
 			component:SetValue(inputbox.Text)
-		end)
+		end))
 		
 		api.Options[props.Name] = component
 		

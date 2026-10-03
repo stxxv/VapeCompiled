@@ -4942,7 +4942,7 @@ run(function()
 								tween = tweenService:Create(chairlegs, TweenInfo.new(0.15), {
 									Size = Vector3.zero
 								})
-								tween.Completed:Connect(function(state)
+								GamingChair:Clean(tween.Completed:Connect(function(state)
 									if state == Enum.PlaybackState.Completed then
 										chairfan.Transparency = 0
 										chairlegs.Transparency = 1
@@ -4951,7 +4951,7 @@ run(function()
 										})
 										tween:Play()
 									end
-								end)
+								end))
 								tween:Play()
 							else
 								if flyingsound.IsPlaying then
@@ -4970,7 +4970,7 @@ run(function()
 									Size = Vector3.zero
 								})
 	
-								tween.Completed:Connect(function(state)
+								GamingChair:Clean(tween.Completed:Connect(function(state)
 									if state == Enum.PlaybackState.Completed then
 										chairfan.Transparency = 1
 										chairlegs.Transparency = 0
@@ -4979,7 +4979,7 @@ run(function()
 										})
 										tween:Play()
 									end
-								end)
+								end))
 	
 								tween:Play()
 							end
@@ -6589,10 +6589,16 @@ run(function()
 				end
 			end
 	
+			if self.Socket then
+				pcall(function()
+					self.Socket:Close()
+				end)
+			end
+	
 			self.Socket = WebSocket.connect('wss://'..self.Dealer.Dealer..'/?access_token='..self.Data.accessToken)
 			self.syncTime = os.clock() - 6
 	
-			self.Socket.OnMessage:Connect(function(payload)
+			self.msgConn = self.Socket.OnMessage:Connect(function(payload)
 				payload = httpService:JSONDecode(payload)
 	
 				if payload.headers and payload.headers['Spotify-Connection-Id'] then
@@ -6610,11 +6616,14 @@ run(function()
 				end
 			end)
 	
-			self.Socket.OnClose:Connect(function()
+			self.closeConn = self.Socket.OnClose:Connect(function()
 				self.connectionId = nil
 				self.syncTime = nil
 				self.Socket = nil
 			end)
+	
+			Spotify:Clean(self.msgConn)
+			Spotify:Clean(self.closeConn)
 		end
 	
 		function SpotifyHandler:Start()

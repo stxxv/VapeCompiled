@@ -589,7 +589,7 @@ run(function()
 					entitylib.character = entity
 					entitylib.isAlive = true
 					entitylib.Events.LocalAdded:Fire(entity)
-					table.insert(entitylib.Connections, char.AttributeChanged:Connect(function(attr)
+					table.insert(entity.Connections, char.AttributeChanged:Connect(function(attr)
 						vapeEvents.AttributeChanged:Fire(attr)
 					end))
 				else
@@ -3348,9 +3348,9 @@ run(function()
 		layout.Padding = UDim.new(0, 4)
 		layout.VerticalAlignment = Enum.VerticalAlignment.Center
 		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		StorageESP:Clean(layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			billboard.Size = UDim2.fromOffset(math.max(layout.AbsoluteContentSize.X + 4, 36), 36)
-		end)
+		end))
 		layout.Parent = frame
 		local corner = Instance.new('UICorner')
 		corner.CornerRadius = UDim.new(0, 4)
@@ -4835,9 +4835,9 @@ run(function()
 		layout.Padding = UDim.new(0, 4)
 		layout.VerticalAlignment = Enum.VerticalAlignment.Center
 		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		BedPlates:Clean(layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			billboard.Size = UDim2.fromOffset(math.max(layout.AbsoluteContentSize.X + 4, 36), 36)
-		end)
+		end))
 		layout.Parent = frame
 		local corner = Instance.new('UICorner')
 		corner.CornerRadius = UDim.new(0, 4)
@@ -6345,12 +6345,12 @@ run(function()
 		windowlist.CellSize = UDim2.fromOffset(51, 52)
 		windowlist.CellPadding = UDim2.fromOffset(4, 3)
 		windowlist.Parent = children
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		vape:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
 			children.CanvasSize = UDim2.fromOffset(0, windowlist.AbsoluteContentSize.Y / vape.guiscale.Scale)
-		end)
+		end))
 		table.insert(vape.Windows, window)
 	
 		local function createitem(id, image)
@@ -6407,9 +6407,9 @@ run(function()
 			end
 		end
 	
-		search:GetPropertyChangedSignal('Text'):Connect(function()
+		vape:Clean(search:GetPropertyChangedSignal('Text'):Connect(function()
 			indexSearch(search.Text)
-		end)
+		end))
 		indexSearch('')
 	
 		return window
@@ -6480,12 +6480,12 @@ run(function()
 		windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		windowlist.Padding = UDim.new(0, 3)
 		windowlist.Parent = childrenlist
-		windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		vape:Clean(windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			if vape.ThreadFix then
 				setthreadidentity(8)
 			end
 			hotbarlist.Size = UDim2.fromOffset(220, math.min(43 + windowlist.AbsoluteContentSize.Y / vape.guiscale.Scale, 603))
-		end)
+		end))
 		textbutton.MouseButton1Click:Connect(function()
 			optionapi:AddHotbar()
 		end)
