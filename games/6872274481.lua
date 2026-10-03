@@ -696,7 +696,7 @@ run(function()
 	end
 
 	local construct = loadstring(downloadFile('newvape/libraries/bedwars/construct.lua'))()
-	repeat task.wait() until construct ~= nil and construct.Loaded
+	repeat task.wait() until construct ~= nil and construct.loaded
 end)
 
 for _, v in {'AntiRagdoll', 'TriggerBot', 'SilentAim', 'AutoRejoin', 'Rejoin', 'Disabler', 'Timer', 'ServerHop', 'MouseTP', 'MurderMystery', 'Invisible', 'Swim'} do
