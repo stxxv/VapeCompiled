@@ -620,19 +620,18 @@ end
 
 ]]
 
-local abilityCd = os.clock()
 bedwars.AbilityController = {
     canUseAbility = function(self)
-        if abilityCd >= os.clock() then
-            abilityCd = os.clock() + 4
-            return true
-        end
-
-        return false
+        return true
     end,
-    useAbility = function(self, ...)
-        replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility:FireServer(...)
+    useAbility = function(self, name, ...)
+        replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility:FireServer(name, ...)
     end
+}
+
+bedwars.BalloonController = {
+    inflateBalloon = function(self) end,
+    deflateBalloon = function(self) end
 }
 
 bedwars.BowConstantsTable = { -- stav, to-do: hardcode values if they change method
@@ -640,3 +639,5 @@ bedwars.BowConstantsTable = { -- stav, to-do: hardcode values if they change met
     RelY = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelY'),
     RelZ = replicatedStorage.TS.combat['projectile-util']:GetAttribute('ConstantManager_RelZ')
 }
+
+bedwars.StatefulEntityKnockbackController = {}
