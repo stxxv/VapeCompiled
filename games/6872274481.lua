@@ -7,6 +7,7 @@ local vapeEvents = setmetatable({}, {
 		return self[index]
 	end
 })
+getgenv().vapeEvents = vapeEvents
 
 local playersService = cloneref(game:GetService('Players'))
 local replicatedStorage = cloneref(game:GetService('ReplicatedStorage'))
@@ -56,6 +57,7 @@ local store = {
 	queueType = 'bedwars_test',
 	tools = {}
 }
+getgenv().store = store
 local Reach = {}
 local HitBoxes = {}
 local InfiniteFly = {}
