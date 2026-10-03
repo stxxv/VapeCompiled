@@ -40,7 +40,7 @@ local prediction = vape.Libraries.prediction
 local getfontbounds = vape.Libraries.getfontbounds
 local getvapeasset = vape.Libraries.getvapeasset
 
-local store = {
+getgenv().store = {
 	attackReach = 0,
 	attackReachUpdate = tick(),
 	damageBlockFail = tick(),
@@ -57,21 +57,18 @@ local store = {
 	queueType = 'bedwars_test',
 	tools = {}
 }
-getgenv().store = store
-local Reach = {}
-local HitBoxes = {}
-local InfiniteFly = {}
-local TrapDisabler
-local AntiFallPart
-local bedwars, remotes, sides, oldinvrender, oldSwing = {}, {}, {}
-getgenv().bedwars = bedwars
-getgenv().remotes = remotes
-getgenv().sides = sides
 
-getgenv().Reach = Reach
-getgenv().HitBoxes = HitBoxes
-getgenv().InfiniteFly = InfiniteFly
-getgenv().TrapDisabler = TrapDisabler
+local AntiFallPart
+local oldinvrender, oldSwing = {}, {}, {}
+
+getgenv().bedwars = {}
+getgenv().remotes = {}
+getgenv().sides = {}
+
+getgenv().Reach = {}
+getgenv().HitBoxes = {}
+getgenv().InfiniteFly = {}
+getgenv().TrapDisabler = {}
 
 local function addBlur(parent)
 	local blur = Instance.new('ImageLabel')
