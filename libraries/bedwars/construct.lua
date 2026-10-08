@@ -646,6 +646,16 @@ end
 
 ]]
 
+-- "Debug lib, suree buddy"
+local debug = getgenv().debug
+debug.getupvalue = function() end
+debug.setupvalue = function() end
+debug.getupvalues = function() end
+debug.getconstants = function() end
+debug.setconstant = function() end
+debug.getprotos = function() end
+debug.getproto = function() end
+
 bedwars.AbilityController = {
     canUseAbility = function(self)
         return true
