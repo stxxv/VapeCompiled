@@ -382,7 +382,6 @@ run(function()
 											extra = {
 												rizz = 'Bro.',
 												owo = 'h-hi sevengwanddad~',
-												those = nil,
 												those = workspace.Name == 'Okay'
 											}
 										})
