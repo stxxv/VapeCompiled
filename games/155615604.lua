@@ -37,7 +37,6 @@ local pl = {}
 local Spring = {}
 local TracerHook = {Hooks = {}}
 local VehicleWallbang = {Enabled = false}
-local KickExploit = {Enabled = false}
 local oldshoot, oldequip
 local aimTimer, shootTimer, aimVec = 0, 0
 local arrestCooldown = 0
@@ -816,7 +815,7 @@ run(function()
 		})
 
 		if entity then
-			targetinfo.Targets[entity] = tick() + 1
+			targetinfo.Targets[entity] = os.clock() + 1
 		end
 
 		return entity, entity and entity[targetPart], origin
@@ -1652,78 +1651,7 @@ run(function()
 end)
 
 run(function()
-	local GunModifications
-	local Spread
-	local FireRate
-	local Automatic
-	local olddata, old = {}
-	local oldhook
-	
-	local function Modify()
-		local data = debug.getupvalue(oldshoot or pl.Shoot, 10)
-		if data and GunModifications.Enabled then
-			if old ~= data then
-				olddata = table.clone(data)
-				old = data
-			end
-	
-			data.SpreadRadius = Spread.Enabled and 0 or olddata.SpreadRadius
-			data.FireRate = (olddata.FireRate or 0) * (FireRate.Value / 100)
-			data.AutoFire = Automatic.Enabled or olddata.AutoFire
-		end
-	end
-	
-	
-	GunModifications = vape.Categories.Blatant:CreateModule({
-		Name = 'GunModifications',
-		Function = function(callback)
-			if callback then
-				oldequip = hookfunction(pl.Equip, function(...)
-					local res = table.pack(oldequip(...))
-					Modify()
-					return unpack(res, 1, res.n)
-				end)
-	
-				Modify()
-			else
-				if oldequip then
-					if restorefunction then
-						restorefunction(pl.Equip)
-					else
-						oldequip = nil
-					end
-				end
-	
-				if old then
-					for i, v in olddata do
-						old[i] = v
-					end
-					table.clear(olddata)
-					old = nil
-				end
-			end
-		end,
-		Tooltip = 'Apply various modifications to enhance any firearm'
-	})
-	FireRate = GunModifications:CreateSlider({
-		Name = 'FireRate Multiplier',
-		Min = 1,
-		Max = 100,
-		Default = 100,
-		Suffix = '%',
-		Function = Modify
-	})
-	Spread = GunModifications:CreateToggle({
-		Name = 'No Spread',
-		Function = Modify
-	})
-	Automatic = GunModifications:CreateToggle({
-		Name = 'Full Automatic',
-		Function = Modify
-	})
-end)
-
-run(function()
+	local FlingExploit
 	local Mode
 	local List
 	local Movement
@@ -1739,8 +1667,9 @@ run(function()
 	})
 	
 	local function getTarget(seat)
-		if tempList[seat] and tempList[seat].RootPart:IsDescendantOf(workspace) and not (tempList[seat].Humanoid.Sit and tempList[seat].Humanoid.SeatPart.Anchored) then
-			return tempList[seat]
+		local tEntity = tempList[seat]
+		if tEntity and tEntity.RootPart:IsDescendantOf(workspace) and (os.clock() - lastFling[tEntity.Player.Name]) < 0.75 and not (tEntity.Humanoid.Sit and tEntity.Humanoid.SeatPart.Anchored) then
+			return tEntity
 		end
 	
 		if entitylib.isAlive then
@@ -1758,7 +1687,7 @@ run(function()
 					lastFling[entity.Player.Name] = os.clock()
 					tempList[seat] = entity
 					table.clear(cloned)
-					notif('KickExploit', 'Attempted fling: '..entity.Player.Name, 5)
+					notif('FlingExploit', 'Attempted fling: '..entity.Player.Name, 5)
 					return entity
 				end
 			end
@@ -1767,8 +1696,8 @@ run(function()
 		end
 	end
 	
-	KickExploit = vape.Categories.Blatant:CreateModule({
-		Name = 'KickExploit',
+	FlingExploit = vape.Categories.Blatant:CreateModule({
+		Name = 'FlingExploit',
 		Function = function(callback)
 			if callback then
 				local reqTimer = os.clock()
@@ -1785,14 +1714,14 @@ run(function()
 							repeat
 								vape.Modules.ServerHop:Toggle()
 								task.wait(1)
-							until not KickExploit.Enabled
+							until not FlingExploit.Enabled
 	
 							return
 						end
 					end
 				end
 	
-				KickExploit:Clean(runService.Heartbeat:Connect(function(dt)
+				FlingExploit:Clean(runService.Heartbeat:Connect(function(dt)
 					if lplr.Team == teams.Neutral then
 						local gui = lplr.PlayerGui:FindFirstChild('TeamsFrame', true)
 						if gui then
@@ -1878,6 +1807,7 @@ run(function()
 								if target then
 									seat.AssemblyLinearVelocity = Vector3.new(10000, 10000, 0)
 									seat.CFrame = CFrame.new(target.RootPart.Position) * CFrame.new(-2, 0, -12)
+									target.RootPart.AssemblyLinearVelocity = Vector3.zero
 									sethiddenproperty(seat, 'PhysicsRepRootPart', target.RootPart)
 									sethiddenproperty(seat, 'PhysicsRepRootRef', InstanceHandle.new(target.RootPart))
 	
@@ -1894,29 +1824,29 @@ run(function()
 		end,
 		Tooltip = 'aesthetical, just remove collisions on vehicles please, this is the worst.'
 	})
-	Mode = KickExploit:CreateDropdown({
+	Mode = FlingExploit:CreateDropdown({
 		Name = 'Mode',
 		List = {'All', 'Individual'},
 		Function = function(value)
 			List.Object.Visible = value ~= 'All'
 		end
 	})
-	List = KickExploit:CreateTextList({
+	List = FlingExploit:CreateTextList({
 		Name = 'Targets',
 		Placeholder = 'Roblox username',
 		Player = true,
 		Visible = false,
 		Darker = true
 	})
-	Movement = KickExploit:CreateToggle({
+	Movement = FlingExploit:CreateToggle({
 		Name = 'Movement',
 		Default = true
 	})
-	Equipment = KickExploit:CreateToggle({
+	Equipment = FlingExploit:CreateToggle({
 		Name = 'Equipment',
 		Tooltip = 'Grab a gun before kicking to kill seated players.'
 	})
-	AutoRejoin = KickExploit:CreateToggle({
+	AutoRejoin = FlingExploit:CreateToggle({
 		Name = 'AutoRejoin',
 		Function = function(callback)
 			PlayerLimit.Object.Visible = callback
@@ -1925,7 +1855,7 @@ run(function()
 		end,
 		Tooltip = 'Automatically server hop after certain conditions are met.'
 	})
-	PlayerLimit = KickExploit:CreateSlider({
+	PlayerLimit = FlingExploit:CreateSlider({
 		Name = 'Player Limit',
 		Min = 1,
 		Max = 24,
@@ -1936,7 +1866,7 @@ run(function()
 			return value == 1 and 'player' or 'players'
 		end
 	})
-	TimeLimit = KickExploit:CreateSlider({
+	TimeLimit = FlingExploit:CreateSlider({
 		Name = 'Time Limit',
 		Min = 1,
 		Max = 20,
@@ -1947,13 +1877,85 @@ run(function()
 			return value == 1 and 'minute' or 'minutes'
 		end
 	})
-	HopList = KickExploit:CreateTextList({
+	HopList = FlingExploit:CreateTextList({
 		Name = 'Hop List',
 		Placeholder = 'Roblox username',
 		Tooltip = 'Automatically hop if the player is spawned in and in the server, good for multiboxing.',
 		Player = true,
 		Visible = false,
 		Darker = true
+	})
+end)
+
+run(function()
+	local GunModifications
+	local Spread
+	local FireRate
+	local Automatic
+	local olddata, old = {}
+	local oldhook
+	
+	local function Modify()
+		local data = debug.getupvalue(oldshoot or pl.Shoot, 10)
+		if data and GunModifications.Enabled then
+			if old ~= data then
+				olddata = table.clone(data)
+				old = data
+			end
+	
+			data.SpreadRadius = Spread.Enabled and 0 or olddata.SpreadRadius
+			data.FireRate = (olddata.FireRate or 0) * (FireRate.Value / 100)
+			data.AutoFire = Automatic.Enabled or olddata.AutoFire
+		end
+	end
+	
+	
+	GunModifications = vape.Categories.Blatant:CreateModule({
+		Name = 'GunModifications',
+		Function = function(callback)
+			if callback then
+				oldequip = hookfunction(pl.Equip, function(...)
+					local res = table.pack(oldequip(...))
+					Modify()
+					return unpack(res, 1, res.n)
+				end)
+	
+				Modify()
+			else
+				if oldequip then
+					if restorefunction then
+						restorefunction(pl.Equip)
+					else
+						oldequip = nil
+					end
+				end
+	
+				if old then
+					for i, v in olddata do
+						old[i] = v
+					end
+					table.clear(olddata)
+					old = nil
+				end
+			end
+		end,
+		Tooltip = 'Apply various modifications to enhance any firearm'
+	})
+	FireRate = GunModifications:CreateSlider({
+		Name = 'FireRate Multiplier',
+		Min = 1,
+		Max = 100,
+		Default = 100,
+		Suffix = '%',
+		Function = Modify
+	})
+	Spread = GunModifications:CreateToggle({
+		Name = 'No Spread',
+		Function = Modify
+	})
+	Automatic = GunModifications:CreateToggle({
+		Name = 'Full Automatic',
+		Function = Modify
 	})
 end)
 
@@ -2015,7 +2017,7 @@ run(function()
 									continue
 								end
 	
-								targetinfo.Targets[entity] = tick() + 1
+								targetinfo.Targets[entity] = os.clock() + 1
 								table.insert(attacked, {
 									Entity = entity,
 									Check = BoxAttackColor
@@ -2264,8 +2266,14 @@ run(function()
 	local VehicleFly
 	local Mode
 	local Speed
+	local CameraMove
 	local welds = {}
 	local up, down = 0, 0
+	
+	local function getMoveVecFromCamera(cf, moveVec)
+		local yaw = select(2, cf:ToEulerAnglesYXZ())
+		return CFrame.fromEulerAnglesYXZ(0, yaw, 0):VectorToObjectSpace(moveVec)
+	end
 	
 	VehicleFly = vape.Categories.Blatant:CreateModule({
 		Name = 'VehicleFly',
@@ -2314,9 +2322,9 @@ run(function()
 							if seat ~= old then
 								inCar = seat:IsDescendantOf(workspace.CarContainer) and seat:IsA('VehicleSeat')
 								if inCar then
-									welds = seat.Parent.Parent.Wheels:QueryDescendants('Rotate')
-									for _, weld in welds do
-										weld.Enabled = false
+									table.clear(welds)
+									for _, weld in seat.Parent.Parent.Wheels:QueryDescendants('Rotate') do
+										welds[weld] = root.CFrame:ToObjectSpace(weld.Part0.CFrame)
 									end
 								end
 	
@@ -2325,21 +2333,23 @@ run(function()
 	
 							if inCar then
 								root.AssemblyLinearVelocity = Vector3.new(0, 2.25, 0)
-								root.CFrame = CFrame.lookAlong(root.Position, gameCamera.CFrame.LookVector) + (entitylib.character.Humanoid.MoveDirection + Vector3.new(0, up + down, 0)) * Speed.Value * dt
+								if CameraMove.Enabled then
+									local moveVec = getMoveVecFromCamera(gameCamera.CFrame, entitylib.character.Humanoid.MoveDirection)
+									root.CFrame = CFrame.lookAlong(root.Position, gameCamera.CFrame.LookVector) * CFrame.new(Vector3.new(moveVec.X, up + down, moveVec.Z) * Speed.Value * dt)
+								else
+									root.CFrame = CFrame.lookAlong(root.Position, gameCamera.CFrame.LookVector) + (entitylib.character.Humanoid.MoveDirection + Vector3.new(0, up + down, 0)) * Speed.Value * dt
+								end
+	
+								for weld, offset in welds do
+									weld.Part0.CFrame = root.CFrame * offset
+								end
+	
 								gameCamera.CameraSubject = entitylib.character.Humanoid
 							end
-						elseif old then
-							for _, weld in welds do
-								weld.Enabled = true
-							end
-							old = nil
 						end
 					end))
 				end
 			else
-				for _, weld in welds do
-					weld.Enabled = true
-				end
 				table.clear(welds)
 			end
 		end,
@@ -2362,6 +2372,11 @@ run(function()
 		Max = 100,
 		Default = 60,
 		Darker = true
+	})
+	CameraMove = VehicleFly:CreateToggle({
+		Name = 'Camera Move',
+		Default = true,
+		Tooltip = 'Move based on the camera look direction.'
 	})
 end)
 
@@ -2746,7 +2761,7 @@ run(function()
 	AutoTeam = vape.Categories.Utility:CreateModule({
 		Name = 'AutoTeam',
 		Function = function(callback)
-			if callback then
+			if callback and lplr.Team == teams.Neutral then
 				local gui = lplr.PlayerGui:FindFirstChild('TeamsFrame', true)
 				if gui then
 					for _, holder in gui:GetChildren() do
@@ -3363,7 +3378,7 @@ run(function()
 	local FontOption
 	local ColorV
 	local Size
-	local tent, lent
+	local tentity, lentity
 	local thealth, ttimer = 0, 0
 	local indi, indipart, indithread
 	
@@ -3445,15 +3460,15 @@ run(function()
 		Function = function(callback)
 			if callback then
 				TracerHook:Add('DamageIndicator', function(...)
-					local part = debug.getstack(4, 17)
+					local part = debug.getstack(4, 13)
 					if typeof(part) == 'Instance' then
 						for _, v in entitylib.List do
 							if part:IsDescendantOf(v.Character) and entitylib.isVulnerable(v, true) then
-								if ttimer <= os.clock() or v ~= tent then
+								if ttimer <= os.clock() or v ~= tentity then
 									thealth = v.Health
 								end
 	
-								tent = v
+								tentity = v
 								ttimer = os.clock() + 0.5
 								break
 							end
@@ -3461,19 +3476,19 @@ run(function()
 					end
 				end)
 	
-				DamageIndicator:Clean(entitylib.Events.EntityUpdated:Connect(function(ent)
-					if ent == tent and ttimer > os.clock() then
-						if ent ~= lent then
+				DamageIndicator:Clean(entitylib.Events.EntityUpdated:Connect(function(entity)
+					if entity == tentity and ttimer > os.clock() then
+						if entity ~= lentity then
 							if indi then
 								indi.Text = '0'
 							end
 	
-							lent = ent
+							lentity = entity
 						end
 	
-						if thealth > ent.Health then
-							createIndicator(thealth - ent.Health, ent.Head.Position + Vector3.new(0, 2, 0))
-							thealth = ent.Health
+						if thealth > entity.Health then
+							createIndicator(thealth - entity.Health, entity.Head.Position + Vector3.new(0, 2, 0))
+							thealth = entity.Health
 						end
 					end
 				end))
@@ -3522,7 +3537,7 @@ run(function()
 			if callback then
 				local played
 				TracerHook:Add('HitSound', function(...)
-					local part = debug.getstack(4, 17)
+					local part = debug.getstack(4, 13)
 					if typeof(part) == 'Instance' then
 						for _, v in entitylib.List do
 							if part:IsDescendantOf(v.Character) and entitylib.isVulnerable(v, true) then
