@@ -1496,6 +1496,7 @@ run(function()
 	vape.Categories.Blatant:CreateModule({
 		Name = 'KeepSprint',
 		Function = function(callback)
+			if ce then return end
 			debug.setconstant(bedwars.SprintController.startSprinting, 5, callback and 'blockSprinting' or 'blockSprint')
 			bedwars.SprintController:stopSprinting()
 		end,
@@ -1583,7 +1584,7 @@ run(function()
 					end)
 				end
 
-				if Animation.Enabled and not (identifyexecutor and table.find({'Argon', 'Delta'}, ({identifyexecutor()})[1])) then
+				if Animation.Enabled and not ce and not (identifyexecutor and table.find({'Argon', 'Delta'}, ({identifyexecutor()})[1])) then
 					local fake = {
 						Controllers = {
 							ViewmodelController = {
@@ -1760,9 +1761,11 @@ run(function()
 						lplr.PlayerGui.MobileUI['2'].Visible = true
 					end)
 				end
+			if not ce then
 				debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
 				debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
-				Attacking = false
+			end
+			Attacking = false
 				if armC0 then
 					AnimTween = tweenService:Create(gameCamera.Viewmodel.RightHand.RightWrist, TweenInfo.new(AnimationTween.Enabled and 0.001 or 0.3, Enum.EasingStyle.Exponential), {
 						C0 = armC0
@@ -3507,6 +3510,7 @@ run(function()
 			end, 12, false)
 		end,
 		block_kicker = function()
+			if ce then return end
 			local old = bedwars.BlockKickerKitController.getKickBlockProjectileOriginPosition
 			bedwars.BlockKickerKitController.getKickBlockProjectileOriginPosition = function(...)
 				local origin, dir = select(2, ...)
@@ -4633,13 +4637,15 @@ run(function()
 		Name = 'Anti-AFK',
 		Function = function(callback)
 			if callback then
-				for _, v in getconnections(lplr.Idled) do
-					v:Disconnect()
-				end
-	
-				for _, v in getconnections(runService.Heartbeat) do
-					if type(v.Function) == 'function' and table.find(debug.getconstants(v.Function), remotes.AfkStatus) then
+				if not ce then
+					for _, v in getconnections(lplr.Idled) do
 						v:Disconnect()
+					end
+	
+					for _, v in getconnections(runService.Heartbeat) do
+						if type(v.Function) == 'function' and table.find(debug.getconstants(v.Function), remotes.AfkStatus) then
+							v:Disconnect()
+						end
 					end
 				end
 	
@@ -6750,6 +6756,7 @@ run(function()
 	local FastConsume = vape.Categories.Inventory:CreateModule({
 		Name = 'FastConsume',
 		Function = function(callback)
+			if ce then return end
 			if callback then
 				oldclickhold = bedwars.ClickHold.startClick
 				oldshowprogress = bedwars.ClickHold.showProgress
@@ -6894,6 +6901,7 @@ run(function()
 	local Crosshair = vape.Legit:CreateModule({
 		Name = 'Crosshair',
 		Function = function(callback)
+			if ce then return end
 			if callback then
 				old = debug.getconstant(bedwars.ViewmodelController.showCrosshair, 25)
 				debug.setconstant(bedwars.ViewmodelController.showCrosshair, 25, Image.Value)
@@ -6939,6 +6947,7 @@ run(function()
 	DamageIndicator = vape.Legit:CreateModule({
 		Name = 'Damage Indicator',
 		Function = function(callback)
+			if ce then return end
 			if callback then
 				oldvalues = table.clone(tab)
 				oldfont = debug.getconstant(bedwars.DamageIndicator, 86)
@@ -6971,7 +6980,7 @@ run(function()
 		Name = 'Font',
 		List = fontitems,
 		Function = function(val)
-			if DamageIndicator.Enabled then
+			if not ce and DamageIndicator.Enabled then
 				debug.setconstant(bedwars.DamageIndicator, 86, Enum.Font[val])
 			end
 		end
@@ -7011,7 +7020,7 @@ run(function()
 	Stroke = DamageIndicator:CreateToggle({
 		Name = 'Stroke',
 		Function = function(callback)
-			if DamageIndicator.Enabled then
+			if not ce and DamageIndicator.Enabled then
 				debug.setconstant(bedwars.DamageIndicator, 119, callback and 'Thickness' or 'Enabled')
 				tab.strokeThickness = callback and 1 or false
 			end
@@ -7172,6 +7181,7 @@ run(function()
 	vape.Legit:CreateModule({
 		Name = 'HitFix',
 		Function = function(callback)
+			if ce then return end
 			debug.setconstant(bedwars.SwordController.swingSwordAtMouse, 23, callback and 'raycast' or 'Raycast')
 			debug.setupvalue(bedwars.SwordController.swingSwordAtMouse, 4, callback and bedwars.QueryUtil or workspace)
 		end,
@@ -7181,9 +7191,9 @@ end)
 
 run(function()
 	local Interface
-	local HotbarOpenInventory = require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-open-inventory']).HotbarOpenInventory
-	local HotbarHealthbar = require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui.healthbar['hotbar-healthbar']).HotbarHealthbar
-	local HotbarApp = getRoactRender(require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-app']).HotbarApp.render)
+	local HotbarOpenInventory = not ce and require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-open-inventory']).HotbarOpenInventory or nil
+	local HotbarHealthbar = not ce and require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui.healthbar['hotbar-healthbar']).HotbarHealthbar or nil
+	local HotbarApp = not ce and getRoactRender(require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-app']).HotbarApp.render) or nil
 	local old, new = {}, {}
 	
 	vape:Clean(function()
@@ -7258,11 +7268,13 @@ run(function()
 		Name = 'Hotbar Color',
 		DefaultOpacity = 0.8,
 		Function = function(hue, sat, val, opacity)
-			local func = oldinvrender or HotbarOpenInventory.render
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 51, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 58, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 54, 1 - opacity)
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 55, math.clamp(1.2 - opacity, 0, 1))
+			local func = oldinvrender or (HotbarOpenInventory and HotbarOpenInventory.render)
+			if not ce then
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 51, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 58, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 54, 1 - opacity)
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 55, math.clamp(1.2 - opacity, 0, 1))
+			end
 			modifyconstant(func, 31, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
 			modifyconstant(func, 32, math.clamp(1.2 - opacity, 0, 1))
 			modifyconstant(func, 34, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
@@ -7646,8 +7658,8 @@ run(function()
 	local OpenInv
 	local KillFeed
 	local OldTabList
-	local HotbarApp = getRoactRender(require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-app']).HotbarApp.render)
-	local HotbarOpenInventory = require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-open-inventory']).HotbarOpenInventory
+	local HotbarApp = not ce and getRoactRender(require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-app']).HotbarApp.render) or nil
+	local HotbarOpenInventory = not ce and require(lplr.PlayerScripts.TS.controllers.global.hotbar.ui['hotbar-open-inventory']).HotbarOpenInventory or nil
 	local old, new = {}, {}
 	local oldkillfeed
 	
@@ -7692,7 +7704,7 @@ run(function()
 				end
 			end
 			if callback then
-				if OpenInv.Enabled then
+				if OpenInv.Enabled and HotbarOpenInventory then
 					oldinvrender = HotbarOpenInventory.render
 					HotbarOpenInventory.render = function()
 						return bedwars.Roact.createElement('TextButton', {Visible = false}, {})
@@ -7708,7 +7720,7 @@ run(function()
 					starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
 				end
 			else
-				if oldinvrender then
+				if oldinvrender and HotbarOpenInventory then
 					HotbarOpenInventory.render = oldinvrender
 					oldinvrender = nil
 				end
@@ -7729,16 +7741,20 @@ run(function()
 		Name = 'Resize Health',
 		Function = function(callback)
 			modifyconstant(HotbarApp, 60, callback and 1 or nil)
-			modifyconstant(debug.getupvalue(HotbarApp, 15).render, 30, callback and 1 or nil)
-			modifyconstant(debug.getupvalue(HotbarApp, 23).tweenPosition, 16, callback and 0 or nil)
+			if not ce then
+				modifyconstant(debug.getupvalue(HotbarApp, 15).render, 30, callback and 1 or nil)
+				modifyconstant(debug.getupvalue(HotbarApp, 23).tweenPosition, 16, callback and 0 or nil)
+			end
 		end,
 		Default = true
 	})
 	UICleanup:CreateToggle({
 		Name = 'No Hotbar Numbers',
 		Function = function(callback)
-			local func = oldinvrender or HotbarOpenInventory.render
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 90, callback and 0 or nil)
+			local func = oldinvrender or (HotbarOpenInventory and HotbarOpenInventory.render)
+			if not ce then
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 90, callback and 0 or nil)
+			end
 			modifyconstant(func, 71, callback and 0 or nil)
 		end,
 		Default = true
@@ -7747,7 +7763,7 @@ run(function()
 		Name = 'No Inventory Button',
 		Function = function(callback)
 			modifyconstant(HotbarApp, 78, callback and 0 or nil)
-			if UICleanup.Enabled then
+			if UICleanup.Enabled and HotbarOpenInventory then
 				if callback then
 					oldinvrender = HotbarOpenInventory.render
 					HotbarOpenInventory.render = function()
@@ -7907,6 +7923,7 @@ run(function()
 	WinEffect = vape.Legit:CreateModule({
 		Name = 'WinEffect',
 		Function = function(callback)
+			if ce then return end
 			if callback then
 				WinEffect:Clean(vapeEvents.MatchEndEvent.Event:Connect(function()
 					for i, v in getconnections(bedwars.Client:Get('WinEffectTriggered').instance.OnClientEvent) do
