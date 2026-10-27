@@ -1039,6 +1039,7 @@ run(function()
 		Name = 'Velocity',
 		Function = function(callback)
 			if callback then
+				
 				old = bedwars.KnockbackUtil.applyKnockback
 				bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
 					if rand:NextNumber(0, 100) > Chance.Value then return end
@@ -1535,6 +1536,7 @@ run(function()
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
 	local Hitreg
+	local oldVMIsVisible, oldVMPlayAnimation
 	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
@@ -1585,23 +1587,37 @@ run(function()
 					end)
 				end
 
-				if Animation.Enabled and not ce and not (identifyexecutor and table.find({'Argon', 'Delta'}, ({identifyexecutor()})[1])) then
-					local fake = {
-						Controllers = {
-							ViewmodelController = {
-								isVisible = function()
-									return not Attacking
-								end,
-								playAnimation = function(...)
-									if not Attacking then
-										bedwars.ViewmodelController:playAnimation(select(2, ...))
+				if Animation.Enabled and not (identifyexecutor and table.find({'Argon', 'Delta'}, ({identifyexecutor()})[1])) then
+					if not ce then
+						local fake = {
+							Controllers = {
+								ViewmodelController = {
+									isVisible = function()
+										return not Attacking
+									end,
+									playAnimation = function(...)
+										if not Attacking then
+											bedwars.ViewmodelController:playAnimation(select(2, ...))
+										end
 									end
-								end
+								}
 							}
 						}
-					}
-					debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, fake)
-					debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, fake)
+						debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, fake)
+						debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, fake)
+					else
+						oldVMIsVisible = bedwars.ViewmodelController.isVisible
+						oldVMPlayAnimation = bedwars.ViewmodelController.playAnimation
+						bedwars.ViewmodelController.isVisible = function()
+							return not Attacking
+						end
+						bedwars.ViewmodelController.playAnimation = function(self, ...)
+							if not Attacking then
+								return oldVMPlayAnimation(self, ...)
+							end
+							return nil
+						end
+					end
 
 					task.spawn(function()
 						local started = false
@@ -1765,6 +1781,10 @@ run(function()
 			if not ce then
 				debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
 				debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
+			elseif oldVMIsVisible then
+				bedwars.ViewmodelController.isVisible = oldVMIsVisible
+				bedwars.ViewmodelController.playAnimation = oldVMPlayAnimation
+				oldVMIsVisible, oldVMPlayAnimation = nil, nil
 			end
 			Attacking = false
 				if armC0 then
@@ -7676,6 +7696,7 @@ run(function()
 	end)
 	
 	local function modifyconstant(func, ind, val)
+		if not func then return end
 		if not old[func] then old[func] = {} end
 		if not new[func] then new[func] = {} end
 		if not old[func][ind] then
@@ -7805,7 +7826,9 @@ run(function()
 	UICleanup:CreateToggle({
 		Name = 'Fix Queue Card',
 		Function = function(callback)
-			modifyconstant(bedwars.QueueCard.render, 15, callback and 0.1 or nil)
+			if not ce then
+				modifyconstant(bedwars.QueueCard.render, 15, callback and 0.1 or nil)
+			end
 		end,
 		Default = true
 	})

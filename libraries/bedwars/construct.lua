@@ -24,6 +24,9 @@ local guiService = cloneref(game:GetService('GuiService'))
 local coreGui = cloneref(game:GetService('CoreGui'))
 local starterGui = cloneref(game:GetService('StarterGui'))
 local debris = cloneref(game:GetService('Debris'))
+local workspace = cloneref(game:GetService('Workspace'))
+local lighting = cloneref(game:GetService('Lighting'))
+local soundService = cloneref(game:GetService('SoundService'))
 
 local gameCamera = workspace.CurrentCamera
 local lplr = playersService.LocalPlayer
@@ -929,30 +932,300 @@ bedwars.QueryUtil = {
     ADJUST_CAN_QUERY = false
 }
 
-bedwars.SoundManager = {
-    playAudio = function(_, id, options)
-        if typeof(id) ~= 'string' then return end
-        local sound = Instance.new('Sound')
-        sound.SoundId = id
-        if options and typeof(options.position) == 'Vector3' then
-            local part = Instance.new('Part')
-            part.Anchored = true
-            part.CanCollide = false
-            part.Transparency = 1
-            part.Size = Vector3.one
-            part.Position = options.position
-            part.Parent = workspace
-            sound.Parent = part
-            debris:AddItem(part, 10)
-        else
-            sound.Parent = workspace
-            debris:AddItem(sound, 10)
+--[[
+
+    AudioManager emulation.
+
+    Players are plain AudioPlayers with the same attributes the real game-core
+    AudioManager sets (AudioCategory / AudioBus + roll-off). The native
+    GameAudioGraph watcher reconciles them into SoundService.GameAudioGraph,
+    so fader volumes and bus routing stay in sync with the real mixer.
+
+]]
+
+local function resolveRangeValue(value, fallback)
+    if type(value) == 'number' then return value end
+    if type(value) == 'table' then
+        local min = value.Min or value.min
+        local max = value.Max or value.max
+        if type(min) == 'number' and type(max) == 'number' then
+            return min + math.random() * (max - min)
         end
-        sound:Play()
-        return sound
+    end
+    if typeof(value) == 'string' then
+        local min, max = value:match('^%s*([%d%.]+)%s*,%s*([%d%.]+)%s*$')
+        if min then
+            min, max = tonumber(min), tonumber(max)
+            return min + math.random() * (max - min)
+        end
+        local single = tonumber(value)
+        if single then return single end
+    end
+    return fallback
+end
+
+local function getWorkspaceAudioFolder()
+    local folder = workspace:FindFirstChild('GameAudioPlayers')
+    if not folder then
+        folder = Instance.new('Folder')
+        folder.Name = 'GameAudioPlayers'
+        folder.Parent = workspace
+    end
+    return folder
+end
+
+local function getLocalAudioFolder()
+    local folder = lighting:FindFirstChild('GameAudioPlayers')
+    if not folder then
+        folder = Instance.new('Folder')
+        folder.Name = 'GameAudioPlayers'
+        folder.Parent = lighting
+    end
+    return folder
+end
+
+local function getAudioGraph()
+    return soundService:FindFirstChild('GameAudioGraph')
+end
+
+bedwars.SoundManager = {
+    audioAssetConfigs = {},
+    availableSpatialParts = {},
+
+    registerAudioAsset = function(self, id, config)
+        if typeof(id) ~= 'string' then return end
+        self.audioAssetConfigs[id] = config or {}
     end,
+
+    registerAudioAssets = function(self, ids)
+        if type(ids) ~= 'table' then return end
+        for _, id in ids do
+            if self.audioAssetConfigs[id] == nil then
+                self.audioAssetConfigs[id] = {}
+            end
+        end
+    end,
+
+    acquireSpatialPart = function(self, position)
+        local part = table.remove(self.availableSpatialParts)
+        if part then
+            part.Position = position
+            return part
+        end
+        part = Instance.new('Part')
+        part.Name = 'Part'
+        part.Size = Vector3.new(1, 1, 1)
+        part.Anchored = true
+        part.CanCollide = false
+        part.CanQuery = false
+        part.Transparency = 1
+        part.CFrame = CFrame.new(position)
+        part.Parent = getWorkspaceAudioFolder()
+        if bedwars.QueryUtil and bedwars.QueryUtil.setQueryIgnored then
+            bedwars.QueryUtil:setQueryIgnored(part)
+        end
+        return part
+    end,
+
+    setAudioPlayConfig = function(_, player, options)
+        if options.looped == true or options.looping == true then
+            player.Looping = true
+        end
+        if type(options.volumeMultiplier) == 'number' and options.volumeMultiplier ~= 1 then
+            player.Volume = player.Volume * options.volumeMultiplier
+        end
+        if type(options.playbackSpeedMultiplier) == 'number' then
+            player.PlaybackSpeed = player.PlaybackSpeed * options.playbackSpeedMultiplier
+        end
+        local maxDistance = options.rollOffMaxDistance or player:GetAttribute('AudioRollOffMaxDistance') or 60
+        player:SetAttribute('AudioRollOffMaxDistance', maxDistance)
+        local minDistance = options.rollOffMinDistance or player:GetAttribute('AudioRollOffMinDistance') or 10
+        player:SetAttribute('AudioRollOffMinDistance', minDistance)
+        local rollOffMode = options.rollOffMode or Enum.RollOffMode.InverseTapered
+        player:SetAttribute('AudioRollOffMode', rollOffMode.Name)
+    end,
+
+    internalPlayAudio = function(self, id, options)
+        if typeof(id) ~= 'string' then return nil end
+        options = options or {}
+
+        local config = self.audioAssetConfigs[id]
+        local merged = {}
+        if config then
+            for k, v in config do
+                merged[k] = v
+            end
+        end
+        for k, v in options do
+            merged[k] = v
+        end
+
+        local player = Instance.new('AudioPlayer')
+        player.Name = typeof(merged.name) == 'string' and merged.name or 'GameAudioPlayer'
+        player.Asset = id
+        local volume = merged.volume
+        if volume == nil then volume = 0.5 end
+        player.Volume = volume
+        player.PlaybackSpeed = resolveRangeValue(merged.playbackSpeed, 1)
+        player.Looping = false
+        player.TimePosition = 0
+        self:setAudioPlayConfig(player, merged)
+
+        -- routing: the native GameAudioGraph watcher picks these attributes up
+        -- and wires the player into the real mixer (verified against the live client)
+        local busId = merged.bus
+        if type(busId) == 'table' then
+            busId = busId.id
+        end
+        if typeof(busId) == 'string' then
+            player:SetAttribute('AudioBus', busId)
+        else
+            player:SetAttribute('AudioCategory', typeof(merged.category) == 'string' and merged.category or 'Gameplay')
+        end
+
+        local parent = merged.parent
+        local spatialPart = nil
+        if parent == nil then
+            if typeof(merged.position) == 'Vector3' then
+                spatialPart = self:acquireSpatialPart(merged.position)
+                parent = spatialPart
+            else
+                parent = getLocalAudioFolder()
+            end
+        end
+
+        local fadeInTime = merged.fadeInTime
+        if type(fadeInTime) == 'number' and fadeInTime > 0 and fadeInTime == fadeInTime then
+            local targetVolume = player.Volume
+            player.Volume = 0
+            local fadeTween = tweenService:Create(player, TweenInfo.new(fadeInTime), {Volume = targetVolume})
+            fadeTween:Play()
+        end
+
+        local fadeOutTime = merged.fadeOutTime
+        if type(fadeOutTime) == 'number' and fadeOutTime > 0 and fadeOutTime == fadeOutTime then
+            task.spawn(function()
+                if not player.IsReady then
+                    player:GetPropertyChangedSignal('IsReady'):Wait()
+                end
+                local timeLength = player.TimeLength
+                while true do
+                    local elapsed = task.wait(0.5)
+                    if not elapsed or not player.Parent or not player.IsPlaying then
+                        break
+                    end
+                    local remaining = (timeLength - player.TimePosition) / player.PlaybackSpeed
+                    if remaining <= fadeOutTime then
+                        local outTween = tweenService:Create(player, TweenInfo.new(math.max(remaining, 0)), {Volume = 0})
+                        outTween:Play()
+                        return
+                    end
+                end
+            end)
+        end
+
+        local released = false
+        local function release()
+            if released then return end
+            released = true
+            if spatialPart then
+                table.insert(bedwars.SoundManager.availableSpatialParts, spatialPart)
+            end
+            if player.Parent then
+                player:Destroy()
+            end
+        end
+
+        player.Ended:Once(function()
+            if spatialPart or merged.parent then
+                task.delay(3, release)
+            else
+                task.defer(release)
+            end
+        end)
+
+        player.Parent = parent
+        player:Play()
+
+        return {
+            player = player,
+            spatialPart = spatialPart,
+            released = false,
+            release = function(self)
+                self.released = true
+                release()
+            end,
+            getAudioPlayer = function()
+                return player
+            end,
+            getMaid = function()
+                return {GiveTask = function() end}
+            end,
+            releaseFromManager = function(self)
+                self:release()
+            end
+        }
+    end,
+
+    playAudio = function(self, id, options)
+        return self:internalPlayAudio(id, options)
+    end,
+
     playSound = function(self, id, options)
-        return self:playAudio(id, options)
+        return self:internalPlayAudio(id, options)
+    end,
+
+    playRandomAudio = function(self, list, options)
+        if type(list) ~= 'table' or #list == 0 then return nil end
+        return self:internalPlayAudio(list[math.random(1, #list)], options)
+    end,
+
+    playAudioPlayer = function(self, id, options)
+        local handle = self:internalPlayAudio(id, options)
+        return handle and handle.player or nil
+    end,
+
+    setBusVolume = function(_, busId, volume)
+        if typeof(busId) ~= 'string' or typeof(volume) ~= 'number' then return end
+        local graph = getAudioGraph()
+        local fader = graph and graph:FindFirstChild((busId:gsub('[^%w_%-]', '_'))..'Fader')
+        if fader then
+            fader.Volume = math.clamp(volume, 0, 3)
+        end
+    end,
+
+    getCategoryBus = function(_, category)
+        return {id = 'Category.'..tostring(category), category = category}
+    end,
+
+    getMasterBus = function()
+        return {id = 'Master'}
+    end,
+
+    getBusById = function(_, busId)
+        return {id = busId}
+    end,
+
+    createChildBus = function(_, busId, category)
+        return {id = busId, category = category}
+    end,
+
+    setSpatialAttenuation = function(_, player, attenuation)
+        if typeof(player) ~= 'Instance' or type(attenuation) ~= 'table' then return end
+        if attenuation.minDistance ~= nil then
+            player:SetAttribute('AudioRollOffMinDistance', attenuation.minDistance)
+        end
+        if attenuation.maxDistance ~= nil then
+            player:SetAttribute('AudioRollOffMaxDistance', attenuation.maxDistance)
+        end
+        if attenuation.rollOffMode ~= nil then
+            player:SetAttribute('AudioRollOffMode', attenuation.rollOffMode.Name)
+        end
+        local category = player:GetAttribute('AudioCategory')
+        if typeof(category) == 'string' then
+            player:SetAttribute('AudioCategory', nil)
+            player:SetAttribute('AudioCategory', category)
+        end
     end
 }
 
@@ -975,8 +1248,6 @@ run(function()
         return httpService:JSONDecode(meta)
     end)
 
-    notif('Vape', 'suc: '..tostring(suc), 32)
-    notif('Vape', 'type of res: '..type(res), 32)
     if suc and res ~= nil and type(res) == 'table' then
         meta = res
     else
@@ -1031,6 +1302,43 @@ bedwars.Shop = {
         return 'wool_'..color
     end
 }
+
+if type(meta.GameSoundMeta) == 'table' and type(meta.SoundList) == 'table' then
+    for soundName, config in meta.GameSoundMeta do
+        local assetId = meta.SoundList[soundName]
+        if typeof(assetId) == 'string' and type(config) == 'table' then
+            bedwars.SoundManager.audioAssetConfigs[assetId] = config
+        end
+    end
+end
+
+-- ce: these are only built on the non-ce path (store.blocks = collection(...)),
+-- but Breaker/AutoBalloon/AutoVoidDrop/AutoBuy iterate them during profile load
+local function registerCollection(tags, customadd, customremove)
+    local objs, clean = collection(tags, nil, customadd, customremove)
+    vape:Clean(function()
+        clean({})
+    end)
+    return objs
+end
+
+store.blocks = registerCollection('block')
+store.shop = registerCollection({'BedwarsItemShop', 'TeamUpgradeShopkeeper'}, function(tab, obj)
+    table.insert(tab, {
+        Id = obj.Name,
+        RootPart = obj,
+        Shop = obj:HasTag('BedwarsItemShop'),
+        Upgrades = obj:HasTag('TeamUpgradeShopkeeper')
+    })
+end)
+store.enchant = registerCollection({'enchant-table', 'broken-enchant-table'}, nil, function(tab, obj, tag)
+    if obj:HasTag('enchant-table') and tag == 'broken-enchant-table' then return end
+    obj = table.find(tab, obj)
+    if obj then
+        table.remove(tab, obj)
+    end
+end)
+store.shopLoaded = true
 
 --[[
 
@@ -1237,9 +1545,9 @@ bedwars.AnimationUtil = {
             track:Play(fadeIn, nil, speed)
         end)
 
-        handle.Stop = function()
+        handle.Stop = function(_, fadeTime)
             pcall(function()
-                track:Stop()
+                track:Stop(fadeTime or 0)
             end)
         end
         handle.Destroy = function()
@@ -1621,16 +1929,167 @@ bedwars.ClickHold = {
     end
 }
 
-bedwars.FovController = {
-    setFOV = function(_, fov)
-        if typeof(fov) == 'number' then
-            gameCamera.FieldOfView = fov
+local fovStatusMods = {}
+
+local function getCameraPerspective()
+    if not gameCamera then return 1 end
+    if (gameCamera.CFrame.Position - gameCamera.Focus.Position).Magnitude <= 1 then
+        return 0
+    end
+    return 1
+end
+
+local function updateFovModifier()
+    local controller = bedwars.FovController
+    if not controller then return end
+    local base = controller:getBaseFOV()
+    local ratio = base ~= 0 and (controller:getFOV() / base) or 1
+    local percent = 0
+    for _, j in fovStatusMods do
+        local modifierMax = j.modifierMax
+        local include = true
+        if modifierMax and modifierMax ~= 0 and modifierMax == modifierMax then
+            include = ratio < modifierMax
         end
+        if include and j.fovMultiplier ~= nil then
+            percent = percent + (j.fovMultiplier - 1)
+        end
+    end
+    controller.fovMultiplier = percent + 1
+    controller:setFOV((bedwars.Store:getState().Settings.fov))
+end
+
+local fovStatusModifier = {
+    addModifier = function(_, modifier)
+        return bedwars.FovController:addModifier(modifier)
     end,
-    getFOV = function()
-        return gameCamera.FieldOfView
+    removeModifier = function(_, modifier)
+        local index = table.find(fovStatusMods, modifier)
+        if index then
+            table.remove(fovStatusMods, index)
+        end
+        updateFovModifier()
+    end,
+    getModifiers = function()
+        return fovStatusMods
+    end,
+    clear = function()
+        table.clear(fovStatusMods)
+        updateFovModifier()
     end
 }
+
+bedwars.FovController = {
+    fov = 80,
+    fovMultiplier = 1,
+    activeFOVTween = nil,
+    fovOverrides = {},
+    fovModifier = fovStatusModifier,
+
+    setFOV = function(self, fov)
+        if typeof(fov) ~= 'number' then return end
+        if getCameraPerspective() ~= 0 then
+            fov = fov - 10
+        end
+        local target = fov * self.fovMultiplier
+        gameCamera.FieldOfView = target
+        self.fov = target
+    end,
+
+    getFOV = function(self)
+        return self.fov
+    end,
+
+    getBaseFOV = function(self)
+        local settingsFov = 70
+        if bedwars.Store then
+            settingsFov = bedwars.Store:getState().Settings.fov
+        end
+        if getCameraPerspective() == 0 then
+            return settingsFov
+        end
+        return settingsFov - 10
+    end,
+
+    addModifier = function(self, modifier)
+        table.insert(fovStatusMods, modifier)
+        updateFovModifier()
+        local removed = false
+        local function remove()
+            if removed then return end
+            removed = true
+            local index = table.find(fovStatusMods, modifier)
+            if index then
+                table.remove(fovStatusMods, index)
+            end
+            updateFovModifier()
+        end
+        return {remove = remove, DoCleaning = remove, Destroy = remove}
+    end,
+
+    getFOVStatusModifier = function(self)
+        return self.fovModifier
+    end,
+
+    playUIOpenFOVTween = function(self)
+        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getBaseFOV() + 10})
+        self.activeFOVTween = tween
+        if next(self.fovOverrides) ~= nil then
+            return tween
+        end
+        tween:Play()
+        tween.Completed:Once(function()
+            if self.activeFOVTween == tween then
+                self.activeFOVTween = nil
+            end
+        end)
+        tween.Destroying:Once(function()
+            if self.activeFOVTween == tween then
+                self.activeFOVTween = nil
+            end
+        end)
+        return tween
+    end,
+
+    playUICloseFOVTween = function(self)
+        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getBaseFOV()})
+        self.activeFOVTween = tween
+        if next(self.fovOverrides) ~= nil then
+            return tween
+        end
+        tween:Play()
+        tween.Completed:Once(function()
+            if self.activeFOVTween == tween then
+                self.activeFOVTween = nil
+            end
+        end)
+        tween.Destroying:Once(function()
+            if self.activeFOVTween == tween then
+                self.activeFOVTween = nil
+            end
+        end)
+        return tween
+    end,
+
+    setFOVOverride = function(self, key, fov, priority)
+        self.fovOverrides[key] = {fov = fov, priority = priority}
+    end,
+
+    removeFOVOverride = function(self, key)
+        self.fovOverrides[key] = nil
+    end,
+
+    disableActiveTween = function(self)
+        if self.activeFOVTween ~= nil then
+            self.activeFOVTween:Destroy()
+        end
+    end
+}
+
+vape:Clean(lplr.CharacterAdded:Connect(function()
+    table.clear(fovStatusMods)
+    updateFovModifier()
+end))
 
 bedwars.ViewmodelController = {
     crosshair = nil,
@@ -1693,13 +2152,40 @@ local SprintConstants = {
 local sprintModifiers = {}
 local sprintRestore = nil
 
+local blockSprintStatusSignal = {
+    _handlers = {}
+}
+function blockSprintStatusSignal:Fire(...)
+    for _, handler in self._handlers do
+        task.spawn(handler, ...)
+    end
+end
+function blockSprintStatusSignal:connect(handler)
+    table.insert(self._handlers, handler)
+    local disconnected = false
+    return {
+        Disconnect = function()
+            if disconnected then return end
+            disconnected = true
+            local index = table.find(blockSprintStatusSignal._handlers, handler)
+            if index then
+                table.remove(blockSprintStatusSignal._handlers, index)
+            end
+        end
+    }
+end
+blockSprintStatusSignal.Connect = blockSprintStatusSignal.connect
+
 bedwars.SprintController = {
     sprinting = false,
     attemptingSprint = false,
     blockSprint = false,
     moveSpeedMultiplier = 1,
     maxSpeed = nil,
-    immediateStop = false
+    immediateStop = false,
+    shiftLockEnabled = false,
+    fovTweenUntil = 0,
+    blockSprintStatusSignal = blockSprintStatusSignal
 }
 
 local function updateSprintMovement()
@@ -1717,6 +2203,7 @@ local function updateSprintMovement()
         end
     end
     bedwars.SprintController.blockSprint = blocked
+    bedwars.SprintController.blockSprintStatusSignal:Fire(blocked)
     bedwars.SprintController.moveSpeedMultiplier = zero and 0 or (percent + 1)
     for _, v in sprintModifiers do
         if v.constantSpeedMultiplier ~= nil then
@@ -1724,11 +2211,15 @@ local function updateSprintMovement()
         end
     end
     if bedwars.SprintController.blockSprint then
-        bedwars.SprintController:stopSprinting(true)
+        bedwars.SprintController:stopSprinting(false)
     elseif bedwars.SprintController.attemptingSprint and not bedwars.SprintController.sprinting then
         bedwars.SprintController:startSprinting()
     end
-    bedwars.SprintController:setSpeed(bedwars.SprintController.sprinting and SprintConstants.RUN_SPEED or SprintConstants.WALK_SPEED)
+    if bedwars.SprintController.sprinting then
+        bedwars.SprintController:setSpeed(SprintConstants.RUN_SPEED)
+        return
+    end
+    bedwars.SprintController:setSpeed(SprintConstants.WALK_SPEED)
 end
 
 local sprintMovementModifier = {
@@ -1776,43 +2267,64 @@ bedwars.SprintController.setSpeed = function(self, speed)
 end
 
 bedwars.SprintController.tweenCameraFOV = function(_, fov, duration)
-    local info = TweenInfo.new(duration or 0.1, Enum.EasingStyle.Linear)
-    local tween = tweenService:Create(gameCamera, info, {FieldOfView = fov})
+    bedwars.SprintController.fovTweenUntil = tick() + (duration or 0.1) + 0.05
+    local tween = tweenService:Create(gameCamera, TweenInfo.new(duration or 0.1, Enum.EasingStyle.Linear), {FieldOfView = fov})
     tween:Play()
-    return tween
-end
-
-bedwars.SprintController.getFovMultiplier = function()
-    return SprintConstants.RUN_FOV_MULT
+    local cleaned = false
+    local maid = {
+        DoCleaning = function()
+            if cleaned then return end
+            cleaned = true
+            pcall(function()
+                tween:Cancel()
+                tween:Destroy()
+            end)
+        end
+    }
+    maid.Destroy = maid.DoCleaning
+    return maid
 end
 
 bedwars.SprintController.startSprinting = function(self)
-    if workspace:GetAttribute('FreecamEnabled') then return end
-    if self.blockSprint then return end
-
+    local attribute = workspace:GetAttribute('FreecamEnabled')
+    if attribute ~= 0 and attribute == attribute and attribute ~= '' and attribute then
+        return nil
+    end
+    if self.blockSprint then
+        return nil
+    end
     self.sprinting = true
     self.attemptingSprint = true
     lplr:SetAttribute('Sprinting', true)
     self:setSpeed(SprintConstants.RUN_SPEED)
     self:tweenCameraFOV(bedwars.FovController:getFOV() * SprintConstants.RUN_FOV_MULT, 0.1)
-
     sprintRestore = function()
         bedwars.SprintController:setSpeed(SprintConstants.WALK_SPEED)
-        bedwars.SprintController:tweenCameraFOV(bedwars.FovController:getFOV(), 0.1)
+        local restoreTween = bedwars.SprintController:tweenCameraFOV(bedwars.FovController:getFOV(), 0.1)
+        if bedwars.SprintController.immediateStop then
+            restoreTween:DoCleaning()
+        end
     end
 end
 
-bedwars.SprintController.stopSprinting = function(self, resetAttempting)
+bedwars.SprintController.stopSprinting = function(self, resetAttempting, immediateStop)
+    if immediateStop == nil then
+        immediateStop = false
+    end
     lplr:SetAttribute('Sprinting', false)
-    if not self.sprinting then return end
-    self.immediateStop = true
+    if not self.sprinting then
+        return nil
+    end
+    if immediateStop then
+        self.immediateStop = true
+    end
     local restore = sprintRestore
     sprintRestore = nil
     if restore then
         restore()
     end
-    self.sprinting = false
     self.immediateStop = false
+    self.sprinting = false
     if resetAttempting then
         self.attemptingSprint = false
     end
@@ -1827,6 +2339,67 @@ bedwars.SprintController.isSprinting = function(self)
 end
 
 bedwars.SprintController:stopSprinting(true)
+
+-- respawn: clear modifiers and re-apply sprint state (real KnitStart / WatchCharacter behavior)
+vape:Clean(lplr.CharacterAdded:Connect(function()
+    table.clear(sprintModifiers)
+    updateSprintMovement()
+    task.defer(function()
+        if bedwars.SprintController.sprinting then
+            bedwars.SprintController:startSprinting()
+        else
+            bedwars.SprintController:stopSprinting(false)
+        end
+    end)
+end))
+
+-- seed fov state from the live camera (the native controller already applied the user's settings)
+do
+    local cam = gameCamera
+    if cam then
+        local perspective = (cam.CFrame.Position - cam.Focus.Position).Magnitude <= 1 and 0 or 1
+        local currentFov = cam.FieldOfView
+        if lplr:GetAttribute('Sprinting') then
+            currentFov = currentFov / SprintConstants.RUN_FOV_MULT
+        end
+        bedwars.FovController.fov = currentFov
+        local settingsFov = currentFov
+        if perspective ~= 0 then
+            settingsFov = settingsFov + 10
+        end
+        if gameState and gameState.Settings then
+            gameState.Settings.fov = math.clamp(math.floor(settingsFov + 0.5), 30, 120)
+        end
+    end
+end
+
+-- watchdog: while our sprint owns the camera/humanoid, restore FOV and WalkSpeed
+-- if anything else changes them
+vape:Clean(runService.Heartbeat:Connect(function()
+    local sprint = bedwars.SprintController
+    if not sprint.sprinting then return end
+
+    local character = lplr.Character
+    local humanoid = character and character:FindFirstChildOfClass('Humanoid')
+    if humanoid and humanoid.Health > 0 then
+        local expected = SprintConstants.RUN_SPEED * (sprint.moveSpeedMultiplier or 1)
+        local maxSpeed = sprint.maxSpeed
+        if maxSpeed and maxSpeed ~= 0 and maxSpeed == maxSpeed then
+            expected = math.min(maxSpeed, expected)
+        end
+        if math.abs(humanoid.WalkSpeed - expected) > 0.01 then
+            humanoid.WalkSpeed = expected
+        end
+    end
+
+    if tick() < (sprint.fovTweenUntil or 0) then return end
+    local fovController = bedwars.FovController
+    if not fovController or fovController.activeFOVTween then return end
+    local expectedFov = fovController:getFOV() * SprintConstants.RUN_FOV_MULT
+    if math.abs(gameCamera.FieldOfView - expectedFov) > 0.05 then
+        gameCamera.FieldOfView = expectedFov
+    end
+end))
 
 bedwars.SwordController = {
     lastAttack = 0,
@@ -2110,6 +2683,12 @@ bedwars.SwordController = {
         local anim = swingAnimations[animIndex]
         local fpAnim = fpAnimations[fpIndex]
         if not config or config.playAnimation ~= false then
+            local previousTrack = self.thirdPersonSwingTrack
+            if previousTrack then
+                pcall(function()
+                    previousTrack:Stop(0)
+                end)
+            end
             self.thirdPersonSwingTrack = bedwars.GameAnimationUtil:playAnimation(lplr, anim, {fadeSamePriorityTracks = false})
             if bedwars.ViewmodelController:isVisible() then
                 bedwars.ViewmodelController:playAnimation(fpAnim)
@@ -2283,16 +2862,16 @@ bedwars.StatefulEntityKnockbackController = {lastImpulseTime = 0}
 
 bedwars.PartyController = {
     leaveParty = function()
-        bedwars.Client:Get('LeaveParty'):CallServer()
+        bedwars.Client:Get('leaveParty'):CallServer()
     end
 }
 
 bedwars.QueueController = {
     joinQueue = function(_, queueType)
-        bedwars.Client:Get('QueueForPlaylist'):SendToServer(queueType)
+        bedwars.Client:Get('joinQueue'):SendToServer({queue_type = queueType})
     end,
     leaveQueue = function()
-        bedwars.Client:Get('LeaveQueue'):CallServer()
+        bedwars.Client:Get('leaveQueue'):SendToServer()
     end
 }
 
@@ -2335,12 +2914,16 @@ bedwars.GrimReaperController = {soulsByPosition = {}}
 bedwars.BlockKickerKitController = {getKickBlockProjectileOriginPosition = function() return nil end}
 bedwars.CannonHandController = {launchSelf = function() end}
 bedwars.CatController = {leap = function() end}
-bedwars.DragonSlayerController = {playPunchAnimation = function() end, deleteEmblem = function() end}
+bedwars.DragonSlayerController = {playPunchAnimation = function() return bedwars.GameAnimationUtil.playAnimation(lplr, bedwars.AnimationType.DRAGON_SLAYER_PUNCH) end, deleteEmblem = function() end}
 bedwars.FishingMinigameController = {startMinigame = function() end}
 bedwars.JailorController = {collectEntity = function() end}
 bedwars.StarCollectorController = {collectEntity = function() end}
 bedwars.LaunchPadController = {attemptLaunch = function() end}
-bedwars.ScytheController = {playLocalAnimation = function() end}
+bedwars.ScytheController = {
+    playLocalAnimation = function()
+        return bedwars.AnimationUtil:playAnimation(lplr, bedwars.BlockController:getAnimationController():getAssetId(bedwars.AnimationUtil:fetchAnimationIndexId("SCYTHE_SWING")))
+    end
+}
 bedwars.SpiritAssassinController = {useSpirit = function() bedwars.Client:Get('UseSpirit'):SendToServer() end}
 bedwars.RavenController = {detonateRaven = function() bedwars.Client:Get('DetonateRaven'):SendToServer() end}
 bedwars.ItemDropController = {
