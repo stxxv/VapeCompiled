@@ -962,39 +962,27 @@ bedwars.SoundManager = {
 
 ]]
 
-local function downloadFile(path, callback)
-	if not isfile(path) then
-		createDownloader(path)
-		local success, data = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/stxxv/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
-		end)
-		if not success or data == '404: Not Found' then
-			error(data)
-		end
-		if path:find('.lua') then
-			data = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..data
-		end
-		writefile(path, data)
-	end
-	return (callback or readfile)(path)
-end
-
 local meta
-local suc, res = pcall(function()
-    local file = downloadFile('newvape/libraries/bedwars/construct.json')
-    return httpService:JSONDecode(file)
+run(function()
+	if not isfolder('newvape/libraries/bedwars') then
+		makefolder('newvape/libraries/bedwars')
+	end
+
+	meta = downloadFile('newvape/libraries/bedwars/construct.lua')
+	repeat task.wait() until meta ~= nil
+
+    local suc, res = pcall(function()
+        return httpService:JSONDecode(meta)
+    end)
+
+    notif('Vape', 'suc: '..tostring(suc), 32)
+    notif('Vape', 'type of res: '..type(res), 32)
+    if suc and res ~= nil and type(res) == 'table' then
+        meta = res
+    else
+        meta = {}
+    end
 end)
-
-print(suc, res)
-if suc and res ~= nil and type(res) == 'table' then
-    meta = res
-else
-    notif('Vape', 'Failed to download construct.json, most features will not work! --> report this error to @.__stav on Discord! (error is in: newvape/error.txt)', 6)
-    writefile('newvape/error.txt', debug.traceback(tostring(res)))
-    warn(debug.traceback(tostring(res)))
-
-    meta = {}
-end
 
 bedwars.ItemMeta = meta.ItemMeta or setmetatable({}, {__index = function() return {} end})
 bedwars.ProjectileMeta = meta.ProjectileMeta or {}

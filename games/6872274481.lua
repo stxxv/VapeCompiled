@@ -375,6 +375,7 @@ local function downloadFile(path, callback)
 	end
 	return (callback or readfile)(path)
 end
+getgenv().downloadFile = downloadFile
 
 local function removeTags(str)
 	str = str:gsub('<br%s*/>', '\n')
@@ -697,7 +698,7 @@ end)
 entitylib.start()
 
 run(function()
-	if isfolder('newvape/libraries/bedwars') then
+	if not isfolder('newvape/libraries/bedwars') then
 		makefolder('newvape/libraries/bedwars')
 	end
 
