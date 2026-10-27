@@ -981,7 +981,8 @@ end
 
 local meta
 local suc, res = pcall(function()
-    return httpService:JSONDecode(downloadFile('newvape/libraries/bedwars/construct.json'))
+    local file = downloadFile('newvape/libraries/bedwars/construct.json')
+    return httpService:JSONDecode(file)
 end)
 
 if suc and res ~= nil and type(res) == 'table' then
@@ -989,6 +990,7 @@ if suc and res ~= nil and type(res) == 'table' then
 else
     notif('Vape', 'Failed to download construct.json, most features will not work! --> report this error to @.__stav on Discord! (error is in: newvape/error.txt)', 6)
     writefile('newvape/error.txt', debug.traceback(tostring(res)))
+    warn(debug.traceback(tostring(res)))
 
     meta = {}
 end
