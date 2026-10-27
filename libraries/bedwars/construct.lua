@@ -968,7 +968,7 @@ run(function()
 		makefolder('newvape/libraries/bedwars')
 	end
 
-	meta = downloadFile('newvape/libraries/bedwars/construct.lua')
+	meta = downloadFile('newvape/libraries/bedwars/construct.json')
 	repeat task.wait() until meta ~= nil
 
     local suc, res = pcall(function()
