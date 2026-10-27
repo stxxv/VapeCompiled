@@ -985,6 +985,7 @@ local suc, res = pcall(function()
     return httpService:JSONDecode(file)
 end)
 
+print(suc, res)
 if suc and res ~= nil and type(res) == 'table' then
     meta = res
 else
