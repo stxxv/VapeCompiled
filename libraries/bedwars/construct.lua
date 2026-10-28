@@ -2808,9 +2808,19 @@ bedwars.ProjectileController = {
         local currentPos = position
         local currentVelocity = velocity
         local conn
+        local landTick
+        local function finish()
+            if conn then
+                conn:Disconnect()
+                conn = nil
+            end
+            if model and model.Parent then
+                model:Destroy()
+            end
+        end
         conn = runService.Heartbeat:Connect(function(dt)
             if not model.Parent then
-                conn:Disconnect()
+                finish()
                 return
             end
             elapsed = elapsed + dt
@@ -2823,16 +2833,18 @@ bedwars.ProjectileController = {
             if result then
                 part.CFrame = CFrame.new(result.Position, result.Position + currentVelocity)
                 currentPos = result.Position
-                conn:Disconnect()
+                landTick = landTick or tick()
             else
                 currentPos = nextPos
                 part.CFrame = CFrame.new(currentPos, currentPos + currentVelocity)
             end
-            if elapsed >= lifetime then
-                if conn.Connected then
-                    conn:Disconnect()
+            -- linger briefly on impact so the hit reads, then always remove the object
+            if landTick then
+                if (tick() - landTick) >= 0.15 then
+                    finish()
                 end
-                model:Destroy()
+            elseif elapsed >= lifetime then
+                finish()
             end
         end)
         return model
@@ -3048,10 +3060,10 @@ local function calculatePath(target, blockpos)
             side = node[2] + side
             if visited[side] then continue end
 
-            local block = findBlock(side)
+            local block = getPlacedBlock(side)
             if not block or block:GetAttribute('NoBreak') or block == target then
                 if not block then
-                    air[side] = true
+                    air[node[2]] = true
                 end
                 continue
             end
@@ -3110,7 +3122,7 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 
     if pos then
         if (entitylib.character.RootPart.Position - pos).Magnitude > 30 then return end
-        local dblock, dpos = findBlock(pos), pos
+        local dblock, dpos = getPlacedBlock(pos), pos
         if not dblock then return end
 
         if (workspace:GetServerTimeNow() - (bedwars.SwordController.lastAttack or 0)) > 0.4 then

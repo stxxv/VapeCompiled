@@ -178,7 +178,8 @@ end
 local function getSword()
 	local bestSword, bestSwordSlot, bestSwordDamage = nil, nil, 0
 	for slot, item in store.inventory.inventory.items do
-		local swordMeta = bedwars.ItemMeta[item.itemType].sword
+		local itemMeta = bedwars.ItemMeta[item.itemType]
+		local swordMeta = itemMeta and itemMeta.sword
 		if swordMeta then
 			local swordDamage = swordMeta.damage or 0
 			if swordDamage > bestSwordDamage then
@@ -193,7 +194,8 @@ getgenv().getSword = getSword
 local function getTool(breakType)
 	local bestTool, bestToolSlot, bestToolDamage = nil, nil, 0
 	for slot, item in store.inventory.inventory.items do
-		local toolMeta = bedwars.ItemMeta[item.itemType].breakBlock
+		local itemMeta = bedwars.ItemMeta[item.itemType]
+		local toolMeta = itemMeta and itemMeta.breakBlock
 		if toolMeta then
 			local toolDamage = toolMeta[breakType] or 0
 			if toolDamage > bestToolDamage then
@@ -212,6 +214,7 @@ local function getWool()
 		end
 	end
 end
+getgenv().getWool = getWool
 
 local function getStrength(plr)
 	if not plr.Player then
@@ -252,6 +255,7 @@ local function getBlocksInPoints(s, e)
 	end
 	return list
 end
+getgenv().getBlocksInPoints = getBlocksInPoints
 
 local function getNearGround(range)
 	range = Vector3.new(3, 3, 3) * (range or 10)
@@ -386,6 +390,7 @@ getgenv().removeTags = removeTags
 local function roundPos(vec)
 	return Vector3.new(math.round(vec.X / 3) * 3, math.round(vec.Y / 3) * 3, math.round(vec.Z / 3) * 3)
 end
+getgenv().roundPos = roundPos
 
 local function switchItem(tool, delayTime)
 	delayTime = delayTime or 0.05
