@@ -371,7 +371,7 @@ if not ce then
                 local dblock, dpos = getPlacedBlock(pos)
                 if not dblock then return end
 
-                if (workspace:GetServerTimeNow() - bedwars.SwordController.lastAttack) > 0.4 then
+                if (workspace:GetServerTimeNow() - (bedwars.SwordController.lastAttack or 0)) > 0.4 then
                     local breaktype = bedwars.ItemMeta[dblock.Name].block.breakType
                     local tool = store.tools[breaktype]
                     if tool then
@@ -1818,7 +1818,19 @@ end
 bedwars.AppController = {
     isAppOpen = function(_, appId)
         local playerGui = lplr:FindFirstChild('PlayerGui')
-        return playerGui ~= nil and playerGui:FindFirstChild(appId) ~= nil
+        local app = playerGui and playerGui:FindFirstChild(appId)
+        if not app then return false end
+        if app:IsA('GuiObject') then
+            return app.Visible
+        end
+        if app.Enabled == false then return false end
+        -- ScreenGuis stay mounted while closed, only count them with visible content
+        for _, v in app:GetDescendants() do
+            if v:IsA('GuiObject') and v.Visible and v.AbsoluteSize.X > 0 and v.AbsoluteSize.Y > 0 then
+                return true
+            end
+        end
+        return false
     end,
     isLayerOpen = function(self, layerId)
         if layerId then
@@ -2032,7 +2044,7 @@ bedwars.FovController = {
     end,
 
     playUIOpenFOVTween = function(self)
-        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getBaseFOV() + 10})
+        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getFOV() + 10})
         self.activeFOVTween = tween
         if next(self.fovOverrides) ~= nil then
             return tween
@@ -2052,7 +2064,7 @@ bedwars.FovController = {
     end,
 
     playUICloseFOVTween = function(self)
-        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getBaseFOV()})
+        local tween = tweenService:Create(gameCamera, TweenInfo.new(0.22, Enum.EasingStyle.Cubic), {FieldOfView = self:getFOV()})
         self.activeFOVTween = tween
         if next(self.fovOverrides) ~= nil then
             return tween
@@ -2185,6 +2197,8 @@ bedwars.SprintController = {
     immediateStop = false,
     shiftLockEnabled = false,
     fovTweenUntil = 0,
+    RUN_SPEED = SprintConstants.RUN_SPEED,
+    WALK_SPEED = SprintConstants.WALK_SPEED,
     blockSprintStatusSignal = blockSprintStatusSignal
 }
 
@@ -2373,8 +2387,8 @@ do
     end
 end
 
--- watchdog: while our sprint owns the camera/humanoid, restore FOV and WalkSpeed
--- if anything else changes them
+-- watchdog: while our sprint owns the humanoid, restore WalkSpeed if anything else
+-- changes it (the in game controller keeps trying to take it back)
 vape:Clean(runService.Heartbeat:Connect(function()
     local sprint = bedwars.SprintController
     if not sprint.sprinting then return end
@@ -2391,15 +2405,35 @@ vape:Clean(runService.Heartbeat:Connect(function()
             humanoid.WalkSpeed = expected
         end
     end
+end))
 
-    if tick() < (sprint.fovTweenUntil or 0) then return end
+-- fov watchdog: reapplies the fov after the camera renders so zooming, sprinting and
+-- the native fov logic can't leave a stale value behind
+local lastFovPerspective = getCameraPerspective()
+runService:BindToRenderStep('VapeFovWatchdog', Enum.RenderPriority.Camera.Value + 1, function()
     local fovController = bedwars.FovController
-    if not fovController or fovController.activeFOVTween then return end
-    local expectedFov = fovController:getFOV() * SprintConstants.RUN_FOV_MULT
-    if math.abs(gameCamera.FieldOfView - expectedFov) > 0.05 then
+    if not fovController then return end
+
+    local perspective = getCameraPerspective()
+    if perspective ~= lastFovPerspective then
+        lastFovPerspective = perspective
+        fovController:setFOV(bedwars.Store:getState().Settings.fov)
+        return
+    end
+
+    if tick() < (bedwars.SprintController.fovTweenUntil or 0) then return end
+    if fovController.activeFOVTween then return end
+
+    local sprint = bedwars.SprintController
+    local sprinting = sprint.sprinting and not sprint.blockSprint
+    local expectedFov = fovController:getFOV() * (sprinting and SprintConstants.RUN_FOV_MULT or 1)
+    if math.abs(gameCamera.FieldOfView - expectedFov) > 0.01 then
         gameCamera.FieldOfView = expectedFov
     end
-end))
+end)
+vape:Clean(function()
+    runService:UnbindFromRenderStep('VapeFovWatchdog')
+end)
 
 bedwars.SwordController = {
     lastAttack = 0,
@@ -2708,8 +2742,34 @@ bedwars.SwordController = {
 }
 
 bedwars.ProjectileController = {
-    calculateImportantLaunchValues = function()
-        return {}
+    getLaunchPosition = function(_, origin)
+        if typeof(origin) == 'Vector3' then return origin end
+        local primary = lplr.Character and lplr.Character.PrimaryPart
+        return primary and primary.Position
+    end,
+    calculateImportantLaunchValues = function(self, projmeta, worldmeta, origin, shootpos)
+        if typeof(projmeta) ~= 'table' then return {} end
+        local meta = projmeta.getProjectileMeta and projmeta:getProjectileMeta() or nil
+        if typeof(meta) ~= 'table' then return {} end
+
+        local position = shootpos or self:getLaunchPosition(origin)
+        if typeof(position) ~= 'Vector3' then return {} end
+        if typeof(projmeta.fromPositionOffset) == 'Vector3' then
+            position = position + projmeta.fromPositionOffset
+        end
+
+        local projectileMeta = typeof(projmeta.projectile) == 'string' and bedwars.ProjectileMeta[projmeta.projectile] or nil
+        local speed = (projectileMeta and projectileMeta.launchVelocity or meta.launchVelocity or 100)
+        local gravity = (meta.gravitationalAcceleration or 196.2) * (projmeta.gravityMultiplier or 1)
+        local lifetime = (worldmeta and meta.predictionLifetimeSec or meta.lifetimeSec or 3)
+
+        return {
+            positionFrom = position,
+            initialVelocity = gameCamera.CFrame.LookVector * speed,
+            gravitationalAcceleration = gravity,
+            deltaT = lifetime,
+            drawDurationSeconds = 5
+        }
     end,
     createLocalProjectile = function(_, source, ammo, projectileName, position, shootId, velocity, options)
         if typeof(position) == 'CFrame' then
@@ -2914,7 +2974,7 @@ bedwars.GrimReaperController = {soulsByPosition = {}}
 bedwars.BlockKickerKitController = {getKickBlockProjectileOriginPosition = function() return nil end}
 bedwars.CannonHandController = {launchSelf = function() end}
 bedwars.CatController = {leap = function() end}
-bedwars.DragonSlayerController = {playPunchAnimation = function() return bedwars.GameAnimationUtil.playAnimation(lplr, bedwars.AnimationType.DRAGON_SLAYER_PUNCH) end, deleteEmblem = function() end}
+bedwars.DragonSlayerController = {playPunchAnimation = function() return bedwars.GameAnimationUtil:playAnimation(lplr, bedwars.AnimationType.DRAGON_SLAYER_PUNCH) end, deleteEmblem = function() end}
 bedwars.FishingMinigameController = {startMinigame = function() end}
 bedwars.JailorController = {collectEntity = function() end}
 bedwars.StarCollectorController = {collectEntity = function() end}
@@ -3053,7 +3113,7 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
         local dblock, dpos = findBlock(pos), pos
         if not dblock then return end
 
-        if (workspace:GetServerTimeNow() - bedwars.SwordController.lastAttack) > 0.4 then
+        if (workspace:GetServerTimeNow() - (bedwars.SwordController.lastAttack or 0)) > 0.4 then
             local blockmeta = bedwars.ItemMeta[dblock.Name]
             local breaktype = blockmeta and blockmeta.block and blockmeta.block.breakType
             local tool = breaktype and store.tools[breaktype]

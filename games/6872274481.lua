@@ -891,8 +891,9 @@ run(function()
 end)
 
 run(function()
-	local old
+	if ce then return end
 	
+	local old
 	vape.Categories.Combat:CreateModule({
 		Name = 'NoClickDelay',
 		Function = function(callback)
@@ -911,6 +912,9 @@ run(function()
 end)
 
 run(function()
+	-- mutates the real CombatConstant, emulated tables don't affect server validation
+	if ce then return end
+	
 	local Value
 	
 	Reach = vape.Categories.Combat:CreateModule({
@@ -940,15 +944,29 @@ run(function()
 	local Sprint
 	local old
 	
+	local function watchSpeed(humanoid) -- im going to fucking kill you mimo for writing such bad code
+		Sprint:Clean(humanoid:GetPropertyChangedSignal('WalkSpeed'):Connect(function()
+			if not Sprint.Enabled then return end
+	
+			if bedwars.SprintController.isSprinting then
+				bedwars.SprintController.sprinting = bedwars.SprintController.isSprinting
+			end
+	
+			if not bedwars.SprintController.sprinting or (bedwars.SprintController.moveSpeedMultiplier or 1) <= 0 then return end
+			bedwars.SprintController:setSpeed(bedwars.SprintController.RUN_SPEED or 20)
+		end))
+	end
+	
 	Sprint = vape.Categories.Combat:CreateModule({
 		Name = 'Sprint',
 		Function = function(callback)
+			if inputService.TouchEnabled then 
+				pcall(function() 
+					lplr.PlayerGui.MobileUI['4'].Visible = not callback 
+				end) 
+			end
+	
 			if callback then
-				if inputService.TouchEnabled then 
-					pcall(function() 
-						lplr.PlayerGui.MobileUI['4'].Visible = false 
-					end) 
-				end
 				old = bedwars.SprintController.stopSprinting
 				bedwars.SprintController.stopSprinting = function(...)
 					local call = old(...)
@@ -960,12 +978,30 @@ run(function()
 						bedwars.SprintController:stopSprinting() 
 					end) 
 				end))
+	
+				if ce then
+					contextActionService:BindActionAtPriority('VapeSprint', function(_, inputState)
+						if inputState == Enum.UserInputState.Begin then
+							bedwars.SprintController:startSprinting()
+						end
+						return Enum.ContextActionResult.Pass
+					end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.LeftShift, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D)
+	
+					if entitylib.isAlive then
+						watchSpeed(entitylib.character.Humanoid)
+					end
+	
+					Sprint:Clean(entitylib.Events.LocalAdded:Connect(function()
+						if entitylib.isAlive then
+							watchSpeed(entitylib.character.Humanoid)
+						end
+					end))
+				end
+	
 				bedwars.SprintController:stopSprinting()
 			else
-				if inputService.TouchEnabled then 
-					pcall(function() 
-						lplr.PlayerGui.MobileUI['4'].Visible = true 
-					end) 
+				if ce then
+					contextActionService:UnbindAction('VapeSprint')
 				end
 				bedwars.SprintController.stopSprinting = old
 				bedwars.SprintController:stopSprinting()
@@ -1033,33 +1069,47 @@ run(function()
 	local Vertical
 	local Chance
 	local TargetCheck
-	local rand, old = Random.new()
+	local rand, old, constants = Random.new()
 	
 	Velocity = vape.Categories.Combat:CreateModule({
 		Name = 'Velocity',
 		Function = function(callback)
 			if callback then
-				
-				old = bedwars.KnockbackUtil.applyKnockback
-				bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
-					if rand:NextNumber(0, 100) > Chance.Value then return end
-					local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
-						Range = 50,
-						Part = 'RootPart',
-						Players = true
-					})
+				if not ce then
+					old = bedwars.KnockbackUtil.applyKnockback
+					bedwars.KnockbackUtil.applyKnockback = function(root, mass, dir, knockback, ...)
+						if rand:NextNumber(0, 100) > Chance.Value then return end
+						local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
+							Range = 50,
+							Part = 'RootPart',
+							Players = true
+						})
 	
-					if check then
-						knockback = knockback or {}
-						if Horizontal.Value == 0 and Vertical.Value == 0 then return end
-						knockback.horizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
-						knockback.vertical = (knockback.vertical or 1) * (Vertical.Value / 100)
+						if check then
+							knockback = knockback or {}
+							if Horizontal.Value == 0 and Vertical.Value == 0 then return end
+							knockback.horizontal = (knockback.horizontal or 1) * (Horizontal.Value / 100)
+							knockback.vertical = (knockback.vertical or 1) * (Vertical.Value / 100)
+						end
+						
+						return old(root, mass, dir, knockback, ...)
 					end
-					
-					return old(root, mass, dir, knockback, ...)
+				else
+					constants = constants or {
+						horizontal = replicatedStorage.TS.damage['knockback-util']:GetAttribute('ConstantManager_kbDirectionStrength'),
+						vertical = replicatedStorage.TS.damage['knockback-util']:GetAttribute('ConstantManager_kbUpwardStrength')
+					}
+	
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbDirectionStrength', constants.horizontal * (Horizontal.Value / 100))
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbUpwardStrength', constants.vertical * (Vertical.Value / 100))
 				end
 			else
-				bedwars.KnockbackUtil.applyKnockback = old
+				if not ce then
+					bedwars.KnockbackUtil.applyKnockback = old
+				else
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbDirectionStrength', constants.horizontal)
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbUpwardStrength', constants.vertical)
+				end
 			end
 		end,
 		Tooltip = 'Reduces knockback taken'
@@ -1069,23 +1119,34 @@ run(function()
 		Min = 0,
 		Max = 100,
 		Default = 0,
-		Suffix = '%'
+		Suffix = '%',
+		Function = function(value)
+			if not Velocity.Enabled then return end
+			replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbDirectionStrength', constants.horizontal * (value / 100))
+		end
 	})
 	Vertical = Velocity:CreateSlider({
 		Name = 'Vertical',
 		Min = 0,
 		Max = 100,
 		Default = 0,
-		Suffix = '%'
+		Suffix = '%',
+		Function = function(value)
+			if not Velocity.Enabled then return end
+			replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbUpwardStrength', constants.vertical * (value / 100))
+		end
 	})
-	Chance = Velocity:CreateSlider({
-		Name = 'Chance',
-		Min = 0,
-		Max = 100,
-		Default = 100,
-		Suffix = '%'
-	})
-	TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
+	
+	if not ce then
+		Chance = Velocity:CreateSlider({
+			Name = 'Chance',
+			Min = 0,
+			Max = 100,
+			Default = 100,
+			Suffix = '%'
+		})
+		TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
+	end
 end)
 
 local AntiFallDirection
@@ -1228,6 +1289,9 @@ run(function()
 end)
 
 run(function()
+	-- needs the real block breaker cooldown, the emulated one is a no-op
+	if ce then return end
+	
 	local FastBreak
 	local Time
 	
@@ -1495,6 +1559,9 @@ run(function()
 end)
 
 run(function()
+	-- debug.setconstant needs a debug enabled executor, hiding it on emulated ones
+	if ce then return end
+	
 	vape.Categories.Blatant:CreateModule({
 		Name = 'KeepSprint',
 		Function = function(callback)
@@ -2357,6 +2424,9 @@ run(function()
 end)
 
 run(function()
+	-- patches movement modifiers the in game controller owns, hidden on emulated executors
+	if ce then return end
+	
 	local old
 	
 	vape.Categories.Blatant:CreateModule({
@@ -2387,6 +2457,9 @@ run(function()
 end)
 
 run(function()
+	-- hooks the real projectile controller, emulated executors have nothing to hook
+	if ce then return end
+	
 	local TargetPart
 	local Targets
 	local FOV
@@ -4414,7 +4487,7 @@ run(function()
 								local block, blockpos = getPlacedBlock(currentpos)
 								if not block then
 									blockpos = checkAdjacent(blockpos * 3) and blockpos * 3 or blockProximity(currentpos)
-									if blockpos then
+									if blockpos and (workspace:GetServerTimeNow() - bedwars.BlockCpsController.lastPlaceTimestamp) >= ((1 / 12) * 0.5) then
 										task.spawn(bedwars.placeBlock, blockpos, wool, false)
 									end
 								end
@@ -5124,7 +5197,7 @@ run(function()
 			if (v.Position - localPosition).Magnitude < Range.Value and bedwars.BlockController:isBlockBreakable({blockPosition = v.Position / 3}, lplr) then
 				if not SelfBreak.Enabled and v:GetAttribute('PlacedByUserId') == lplr.UserId then continue end
 				if (v:GetAttribute('BedShieldEndTime') or 0) > workspace:GetServerTimeNow() then continue end
-				if LimitItem.Enabled and not (store.hand.tool and bedwars.ItemMeta[store.hand.tool.Name].breakBlock) then continue end
+				if LimitItem.Enabled and not (store.hand.tool and bedwars.ItemMeta[store.hand.tool.Name] and bedwars.ItemMeta[store.hand.tool.Name].breakBlock) then continue end
 	
 				hit += 1
 				local target, path, endpos = bedwars.breakBlock(v, Effect.Enabled, Animation.Enabled, CustomHealth.Enabled and customHealthbar or nil, InstantBreak.Enabled)
@@ -5139,7 +5212,7 @@ run(function()
 					end
 				end
 	
-				task.wait(InstantBreak.Enabled and (store.damageBlockFail > tick() and 4.5 or 0) or BreakSpeed.Value)
+				task.wait(InstantBreak.Enabled and ((store.damageBlockFail or 0) > tick() and 4.5 or 0) or BreakSpeed.Value)
 	
 				return true
 			end
