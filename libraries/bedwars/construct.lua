@@ -2631,7 +2631,11 @@ bedwars.SwordController = {
 
         local charge = type(chargeTime) == 'number' and chargeTime or 0
         local target = self:getTargetInRegion(range, charge)
-        if not target then return end
+        if not target then
+            -- nothing in range, but the swing itself is what a click should look like
+            self:playSwordEffect(itemMeta, false)
+            return
+        end
 
         local ratio = 0
         if charge > 0 and sword.chargedAttack and sword.chargedAttack.maxChargeTimeSec then
@@ -2984,13 +2988,58 @@ bedwars.WindWalkerController = {updateSpeed = function() end, spawnOrb = functio
 bedwars.BatteryEffectsController = {liveBatteries = {}, getBatteryInfo = function() return nil end}
 bedwars.GrimReaperController = {soulsByPosition = {}}
 bedwars.BlockKickerKitController = {getKickBlockProjectileOriginPosition = function() return nil end}
-bedwars.CannonHandController = {launchSelf = function() end}
-bedwars.CatController = {leap = function() end}
+bedwars.CannonHandController = {
+    launchSelf = function(self, plr)
+        bedwars.Client:Get('LaunchSelfFromCannon'):CallServer({
+            cannonBlockPos = plr.Position
+        }):andThen(function()
+            if entitylib.isAlive then
+                lplr.Character.PrimaryPart:ApplyImpulse(lplr.Character.PrimaryPart.LookVector * (lplr.Character.PrimaryPart.AssemblyMass or 1) * 200)
+            end
+        end)
+    end
+}
+bedwars.CatController = {
+    leap = function(self, plr, velo)
+        plr.HumanoidRootPart.CFrame = CFrame.lookAt(plr.HumanoidRootPart.Position, plr.HumanoidRootPart.Position + velo * Vector3.new(1, 0, 1))
+        plr.Humanoid.JumpHeight = 0.5
+        plr.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        plr.HumanoidRootPart:ApplyImpulse(velo.Unit * Vector3.new(1, 0, 1) * (plr.PrimaryPart and plr.PrimaryPart.AssemblyMass or 1) * 70)
+    end
+}
 bedwars.DragonSlayerController = {playPunchAnimation = function() return bedwars.GameAnimationUtil:playAnimation(lplr, bedwars.AnimationType.DRAGON_SLAYER_PUNCH) end, deleteEmblem = function() end}
 bedwars.FishingMinigameController = {startMinigame = function() end}
 bedwars.JailorController = {collectEntity = function() end}
 bedwars.StarCollectorController = {collectEntity = function() end}
-bedwars.LaunchPadController = {attemptLaunch = function() end}
+bedwars.LaunchPadController = {
+    lastLaunch = 0,
+    attemptLaunch = function(self, pad, team)
+        if team and lplr:GetAttribute('Team') ~= team then
+            return
+        end
+
+        if not entitylib.isAlive then
+            return
+        end
+
+		if workspace:GetServerTimeNow() - self.lastLaunch < 1 then
+			return
+		end
+		self.lastLaunch = workspace:GetServerTimeNow()
+
+        local strength, dir = pad:GetAttribute('Strength') or 1, workspace:GetAttribute('Direction') or Vector3.new(0, 1, 0)
+        task.spawn(function()
+            bedwars.Client:Get('UseLaunchPad'):SendToServer({
+                launchPad = pad
+            }):andThen(function()
+                lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                
+                local plrMass = lplr.Character.PrimaryPart.AssemblyMass * 100 * strength
+                lplr.Character.PrimaryPart:ApplyImpulse(Vector3.new(plrMass, plrMass, plrMass) * dir)
+            end)
+		end)
+    end
+}
 bedwars.ScytheController = {
     playLocalAnimation = function()
         return bedwars.AnimationUtil:playAnimation(lplr, bedwars.BlockController:getAnimationController():getAssetId(bedwars.AnimationUtil:fetchAnimationIndexId("SCYTHE_SWING")))
@@ -3095,7 +3144,15 @@ local function calculatePath(target, blockpos)
 end
 
 bedwars.placeBlock = function(pos, item)
-    if not getItem(item) then return end
+    local itemData = getItem(item)
+    if not itemData then return end
+    -- the server only accepts a placement for the block you are actually holding
+    if itemData.tool then
+        local hand = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
+        if not hand or hand.Value ~= itemData.tool then
+            switchItem(itemData.tool, 0)
+        end
+    end
     local blockpos = bedwars.BlockController:getBlockPosition(pos)
     local success, result = pcall(function()
         bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
@@ -3123,6 +3180,11 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
     if pos then
         if (entitylib.character.RootPart.Position - pos).Magnitude > 30 then return end
         local dblock, dpos = getPlacedBlock(pos), pos
+        -- beds, lucky blocks and iron ore are not 3-stud 'block' instances, so the
+        -- grid index cannot see them; fall back to the instance the caller passed in
+        if not dblock and typeof(block) == 'Instance' and roundBlockPos(block.Position) == roundBlockPos(pos) then
+            dblock = block
+        end
         if not dblock then return end
 
         if (workspace:GetServerTimeNow() - (bedwars.SwordController.lastAttack or 0)) > 0.4 then
