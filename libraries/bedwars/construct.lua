@@ -1255,7 +1255,13 @@ run(function()
     end
 end)
 
-bedwars.ItemMeta = meta.ItemMeta or setmetatable({}, {__index = function() return {} end})
+-- unknown item types must not nil-index: module code reads ItemMeta[i].block and
+-- .displayName all over, and a nil there kills a repeat loop with no error
+bedwars.ItemMeta = setmetatable(meta.ItemMeta or {}, {
+    __index = function()
+        return {}
+    end
+})
 bedwars.ProjectileMeta = meta.ProjectileMeta or {}
 bedwars.QueueMeta = meta.QueueMeta or {}
 bedwars.BedwarsKitMeta = meta.BedwarsKitMeta or {}
@@ -1417,8 +1423,12 @@ bedwars.getIcon = function(item, showinv)
     return itemmeta and showinv and itemmeta.image or ''
 end
 
+-- the block-engine works in grid space: getBlockPosition(390, 24, 453) is (130, 8, 151)
+-- and getWorldPosition is the reverse. every blockRef the server validates is a grid
+-- position, so the store has to be keyed that way too - world-space keys sent every
+-- DamageBlock/PlaceBlock three cells off and it answered 'cancelled'
 local function roundBlockPos(pos)
-    return Vector3.new(math.round(pos.X / 3) * 3, math.round(pos.Y / 3) * 3, math.round(pos.Z / 3) * 3)
+    return Vector3.new(math.round(pos.X / 3), math.round(pos.Y / 3), math.round(pos.Z / 3))
 end
 
 local blockIndex, blockIndexTick = {}, 0
@@ -1437,7 +1447,8 @@ end
 
 local function findBlock(pos)
     if typeof(pos) ~= 'Vector3' then return nil end
-    return getBlockIndex()[roundBlockPos(pos)]
+    -- callers hand us grid positions, exactly like the real store does
+    return getBlockIndex()[pos]
 end
 
 local blockStore = {
@@ -1462,7 +1473,7 @@ bedwars.BlockController = {
         return roundBlockPos(pos)
     end,
     getWorldPosition = function(_, pos)
-        return pos
+        return pos * 3
     end,
     getStore = function()
         return blockStore
@@ -1583,10 +1594,12 @@ local function getMouseInfo(_, mode, params)
     local result = bedwars.QueryUtil:raycast(origin, direction * 100, rayParams)
     if not result or not result.Instance or not result.Instance:GetAttribute('Block') then return nil end
 
+    local blockPosition = roundBlockPos(result.Instance.Position)
     return {
-        placementPosition = roundBlockPos(result.Position + result.Normal * 1.5),
+        -- the real selector returns grid positions (placementPosition = blockRef.blockPosition + normal)
+        placementPosition = blockPosition + result.Normal.Unit,
         target = {
-            blockRef = {blockPosition = roundBlockPos(result.Instance.Position)},
+            blockRef = {blockPosition = blockPosition},
             blockInstance = result.Instance,
             hitPosition = result.Position,
             hitNormal = result.Normal
@@ -2441,6 +2454,7 @@ bedwars.SwordController = {
     swingCounter = 0,
     disableSwingState = false,
     thirdPersonSwingTrack = nil,
+    firstPersonSwingTrack = nil,
 
     getHandItem = function()
         return gameState.Inventory.observedInventory.inventory.hand
@@ -2682,6 +2696,17 @@ bedwars.SwordController = {
 
         self:swingSwordInRegion(chargeTime)
     end,
+    stopSwingAnimation = function(self)
+        for _, track in {self.thirdPersonSwingTrack, self.firstPersonSwingTrack} do
+            if track then
+                pcall(function()
+                    track:Stop(0)
+                end)
+            end
+        end
+        self.thirdPersonSwingTrack = nil
+        self.firstPersonSwingTrack = nil
+    end,
     playSwordEffect = function(self, swordMeta, charged, config)
         if not swordMeta then return end
         local sword = swordMeta.sword
@@ -2721,16 +2746,28 @@ bedwars.SwordController = {
         local anim = swingAnimations[animIndex]
         local fpAnim = fpAnimations[fpIndex]
         if not config or config.playAnimation ~= false then
-            local previousTrack = self.thirdPersonSwingTrack
-            if previousTrack then
-                pcall(function()
-                    previousTrack:Stop(0)
-                end)
+            self:stopSwingAnimation()
+            -- action priority so the game's movement tracks cannot swallow the swing, and
+            -- never looped, or the last swing of a click keeps playing after release
+            self.thirdPersonSwingTrack = bedwars.GameAnimationUtil:playAnimation(lplr, anim, {
+                fadeSamePriorityTracks = false,
+                looped = false,
+                priority = Enum.AnimationPriority.Action
+            })
+            local viewmodel = bedwars.ViewmodelController
+            if viewmodel:isVisible() then
+                self.firstPersonSwingTrack = viewmodel:playAnimation(fpAnim, {looped = false, priority = Enum.AnimationPriority.Action})
             end
-            self.thirdPersonSwingTrack = bedwars.GameAnimationUtil:playAnimation(lplr, anim, {fadeSamePriorityTracks = false})
-            if bedwars.ViewmodelController:isVisible() then
-                bedwars.ViewmodelController:playAnimation(fpAnim)
-            end
+
+            local track = self.thirdPersonSwingTrack
+            local length = track and track.GetTrack and track.GetTrack()
+            length = typeof(length) == 'Instance' and length.Length or 0.5
+            task.delay(math.clamp(length, 0.15, 1), function()
+                -- only clean up the swing that scheduled this, not a newer one
+                if self.thirdPersonSwingTrack == track then
+                    self:stopSwingAnimation()
+                end
+            end)
         end
 
         self.swingCounter = self.swingCounter + 1 < #swingAnimations and (self.swingCounter + 1) or 0
@@ -2969,8 +3006,17 @@ bedwars.BlockPlacer = {
             disable = function() end,
             destroy = function() end
         }
+        -- pos arrives in grid space (that is what the block selector returns) and
+        -- bedwars.placeBlock works in world space. the real placer also places whatever
+        -- is in your hand, it is not fixed to the block type it was constructed with
         placer.placeBlock = function(self, pos)
-            local placed = bedwars.placeBlock(pos, self.blockType)
+            if typeof(pos) ~= 'Vector3' then return end
+            local item = self.blockType or 'wool_white'
+            local hand = store.hand
+            if hand and hand.toolType == 'block' and hand.tool then
+                item = hand.tool.Name
+            end
+            local placed = bedwars.placeBlock(pos * 3, item)
             if placed then
                 self.lastPlaceTimestamp = workspace:GetServerTimeNow()
                 table.insert(self.placed, pos)
@@ -3145,28 +3191,29 @@ end
 
 bedwars.placeBlock = function(pos, item)
     local itemData = getItem(item)
-    if not itemData then return end
-    -- the server only accepts a placement for the block you are actually holding
-    --[[if itemData.tool then
-        local hand = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
-        if not hand or hand.Value ~= itemData.tool then
-            switchItem(itemData.tool, 0)
+    local tool = itemData and itemData.tool
+    if not tool then
+        -- the equipped item is not always listed in the backpack folder, so fall back to
+        -- the hand: scaffolding places the block it is already holding
+        local held = store.hand
+        if held and held.tool and held.tool.Name == item then
+            tool = held.tool
         end
-    end]]
+    end
+    if not tool then return end
+
+    -- the server only accepts a placement for the block you are actually holding
+    local handValue = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
+    if handValue and handValue.Value ~= tool then
+        switchItem(tool, 0)
+    end
+
     local blockpos = bedwars.BlockController:getBlockPosition(pos)
     local success, result = pcall(function()
-        bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
+        return bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
             blockType = item,
             position = blockpos,
-            blockData = 0,
-			mouseBlockInfo = {
-				target = {
-                    blockRef = {blockPosition = blockpos},
-                    hitPosition = blockpos * 3,
-                    hitNormal = Vector3.zero
-                },
-				placementPosition = blockpos
-			},
+            blockData = 0
         })
     end)
 
@@ -3180,7 +3227,7 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
     if lplr:GetAttribute('DenyBlockBreak') or not entitylib.isAlive or InfiniteFly.Enabled then return end
     local cost, pos, target, path = math.huge
 
-    for _, v in {block.Position / 3} do
+    for _, v in {bedwars.BlockController:getBlockPosition(block.Position)} do
         local dpos, dcost, dpath = calculatePath(block, v * 3)
         if dpos and dcost < cost then
             cost, pos, target, path = dcost, dpos, v * 3, dpath
@@ -3189,11 +3236,13 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 
     if pos then
         if (entitylib.character.RootPart.Position - pos).Magnitude > 30 then return end
-        local dblock, dpos = getPlacedBlock(pos), pos
-        -- beds, lucky blocks and iron ore are not 3-stud 'block' instances, so the
-        -- grid index cannot see them; fall back to the instance the caller passed in
+        -- dpos is the store's grid position, which is what the server validates the
+        -- blockRef against; pos stays in world space for hitPosition
+        local dblock, dpos = getPlacedBlock(pos)
+        -- beds, lucky blocks and iron ore are not 3-stud 'block' instances, so the grid
+        -- index cannot see them; fall back to the instance the caller passed in
         if not dblock and typeof(block) == 'Instance' and roundBlockPos(block.Position) == roundBlockPos(pos) then
-            dblock = block
+            dblock, dpos = block, roundBlockPos(pos)
         end
         if not dblock then return end
 
@@ -3447,12 +3496,12 @@ task.spawn(function()
         local current = scanBlockIndex()
         for pos, block in current do
             if not knownBlocks[pos] then
-                dispatchZapBlock('PlaceBlockEvent', pos / 3, block.Name)
+                dispatchZapBlock('PlaceBlockEvent', pos, block.Name)
             end
         end
         for pos, block in knownBlocks do
             if not current[pos] then
-                dispatchZapBlock('BreakBlockEvent', pos / 3, block.Name)
+                dispatchZapBlock('BreakBlockEvent', pos, block.Name)
             end
         end
         knownBlocks = current
