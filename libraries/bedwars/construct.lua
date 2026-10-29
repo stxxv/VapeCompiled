@@ -1431,24 +1431,102 @@ local function roundBlockPos(pos)
     return Vector3.new(math.round(pos.X / 3), math.round(pos.Y / 3), math.round(pos.Z / 3))
 end
 
-local blockIndex, blockIndexTick = {}, 0
-local function getBlockIndex()
-    if tick() - blockIndexTick > 0.5 then
-        table.clear(blockIndex)
-        for _, v in collectionService:GetTagged('block') do
-            if v.Size == Vector3.one * 3 then
-                blockIndex[roundBlockPos(v.Position)] = v
+-- the store has to answer for every cell a block covers, not for its centre: the game
+-- merges runs of identical blocks into one greedy part (a single 'grass' part can span
+-- 30x6x9 studs), so keying by the instance centre dropped almost every block from the
+-- index and left only 3x3x3 parts like beds findable. parts are bucketed into chunks
+-- and a chunk is expanded to cell -> part the first time a cell in it is queried.
+local BLOCK_CHUNK = 8 -- cells per chunk edge
+local CHUNK_OFFSET, CHUNK_BITS = 512, 1024
+
+local blockChunkParts, blockCellCache, blockIndexTick = {}, {}, 0
+
+local function chunkKey(cx, cy, cz)
+    return ((cx + CHUNK_OFFSET) * CHUNK_BITS + (cy + CHUNK_OFFSET)) * CHUNK_BITS + (cz + CHUNK_OFFSET)
+end
+
+-- cell n is centred on 3n studs, so the cell covers 3n - 1.5 .. 3n + 1.5
+local function blockCellRange(v)
+    local half = v.Size / 2
+    local low = (v.Position - half + Vector3.one * 1.5) / 3
+    local high = (v.Position + half - Vector3.one * 1.5) / 3
+    return math.ceil(low.X), math.floor(high.X), math.ceil(low.Y), math.floor(high.Y), math.ceil(low.Z), math.floor(high.Z)
+end
+
+local function rebuildBlockIndex()
+    blockChunkParts, blockCellCache, blockIndexTick = {}, {}, tick()
+
+    for _, v in collectionService:GetTagged('block') do
+        if v:IsA('BasePart') then
+            local minX, maxX, minY, maxY, minZ, maxZ = blockCellRange(v)
+            if minX <= maxX and minY <= maxY and minZ <= maxZ then
+                local entry = {part = v, min = Vector3.new(minX, minY, minZ), max = Vector3.new(maxX, maxY, maxZ)}
+                for cx = math.floor(minX / BLOCK_CHUNK), math.floor(maxX / BLOCK_CHUNK) do
+                    for cy = math.floor(minY / BLOCK_CHUNK), math.floor(maxY / BLOCK_CHUNK) do
+                        for cz = math.floor(minZ / BLOCK_CHUNK), math.floor(maxZ / BLOCK_CHUNK) do
+                            local key = chunkKey(cx, cy, cz)
+                            local list = blockChunkParts[key]
+                            if not list then
+                                list = {}
+                                blockChunkParts[key] = list
+                            end
+                            list[#list + 1] = entry
+                        end
+                    end
+                end
             end
         end
-        blockIndexTick = tick()
     end
-    return blockIndex
+end
+
+local function getBlockIndex()
+    if tick() - blockIndexTick > 0.15 then
+        rebuildBlockIndex()
+    end
+    return blockChunkParts
 end
 
 local function findBlock(pos)
     if typeof(pos) ~= 'Vector3' then return nil end
-    -- callers hand us grid positions, exactly like the real store does
-    return getBlockIndex()[pos]
+    -- refresh first: a cell cache hit would otherwise keep answering from an index that
+    -- is past its ttl, and a placed or broken block would stay invisible
+    local chunks = getBlockIndex()
+    local cell = Vector3.new(math.round(pos.X), math.round(pos.Y), math.round(pos.Z))
+    local cached = blockCellCache[cell]
+    if cached ~= nil then
+        return cached or nil
+    end
+
+    local cx, cy, cz = math.floor(cell.X / BLOCK_CHUNK), math.floor(cell.Y / BLOCK_CHUNK), math.floor(cell.Z / BLOCK_CHUNK)
+    local list = chunks[chunkKey(cx, cy, cz)]
+    local found = false
+    if list then
+        local baseX, baseY, baseZ = cx * BLOCK_CHUNK, cy * BLOCK_CHUNK, cz * BLOCK_CHUNK
+        for _, entry in list do
+            local min, max = entry.min, entry.max
+            if cell.X >= min.X and cell.X <= max.X
+                and cell.Y >= min.Y and cell.Y <= max.Y
+                and cell.Z >= min.Z and cell.Z <= max.Z then
+                -- cache the part over the cells of this chunk only, the rest belongs to
+                -- the neighbours and is expanded when those chunks are asked for
+                for x = math.max(min.X, baseX), math.min(max.X, baseX + BLOCK_CHUNK - 1) do
+                    for y = math.max(min.Y, baseY), math.min(max.Y, baseY + BLOCK_CHUNK - 1) do
+                        for z = math.max(min.Z, baseZ), math.min(max.Z, baseZ + BLOCK_CHUNK - 1) do
+                            blockCellCache[Vector3.new(x, y, z)] = entry.part
+                        end
+                    end
+                end
+                found = true
+                break
+            end
+        end
+    end
+
+    if not found then
+        blockCellCache[cell] = false
+        return nil
+    end
+    return blockCellCache[cell] or nil
 end
 
 local blockStore = {
@@ -1460,8 +1538,10 @@ local blockStore = {
     end,
     getAllBlockPositions = function()
         local positions = {}
-        for pos in getBlockIndex() do
-            table.insert(positions, pos)
+        for _, v in collectionService:GetTagged('block') do
+            if v:IsA('BasePart') then
+                table.insert(positions, roundBlockPos(v.Position))
+            end
         end
         return positions
     end,
@@ -2453,6 +2533,8 @@ bedwars.SwordController = {
     lastSwing = 0,
     swingCounter = 0,
     disableSwingState = false,
+    lastMissRequest = 0,
+    lastChargedAttackTimeMap = {},
     thirdPersonSwingTrack = nil,
     firstPersonSwingTrack = nil,
 
@@ -2596,6 +2678,21 @@ bedwars.SwordController = {
         bedwars.Client:Get(remotes.AttackEntity):SendToServer(payload)
         return true
     end,
+    -- separates the attack from the swing so a miss can report itself: the game sends
+    -- SwordSwingMiss for those (rate limited at 20 a second server side), and skips the
+    -- swing bookkeeping entirely without it
+    sendMissRequest = function(self, ratio)
+        local hand = self:getHandItem()
+        if not hand or not hand.tool then return false end
+        if tick() - self.lastMissRequest < 0.05 then return false end
+        self.lastMissRequest = tick()
+
+        bedwars.Client:Get('SwordSwingMiss'):SendToServer({
+            weapon = hand.tool,
+            chargeRatio = ratio or 0
+        })
+        return true
+    end,
     attackEntity = function(self, entity, rayDirection, chargeTime, config)
         if self.disableSwingState then return false end
         local character = lplr.Character
@@ -2608,6 +2705,30 @@ bedwars.SwordController = {
         local sword = itemMeta and itemMeta.sword
         if not sword then return false end
 
+        local chargeSeconds = type(chargeTime) == 'table' and chargeTime.chargeTime or (type(chargeTime) == 'number' and chargeTime or 0)
+        local ratio = 0
+        if chargeSeconds > 0 and sword.chargedAttack and sword.chargedAttack.maxChargeTimeSec then
+            ratio = math.clamp(chargeSeconds / sword.chargedAttack.maxChargeTimeSec, 0, 1)
+        end
+
+        if not entity then
+            -- a miss still swings, and still has to tell the server
+            if not config or config.playAnimation ~= false then
+                self:playSwordEffect(itemMeta, ratio >= 1, config)
+            end
+            if ratio == 1 then
+                self.lastChargedAttackTimeMap[hand.itemType] = workspace:GetServerTimeNow()
+            end
+            if sword.applyCooldownOnMiss == true then
+                self.lastAttack = workspace:GetServerTimeNow()
+            end
+            local multiHit = sword.multiHitCheckDurationSec
+            if multiHit == 0 or multiHit ~= multiHit or not multiHit then
+                self:sendMissRequest(ratio)
+            end
+            return true
+        end
+
         local inst = entity.getInstance and entity:getInstance() or entity.Character
         if not inst or not inst.Parent or not inst.PrimaryPart then return false end
 
@@ -2616,12 +2737,6 @@ bedwars.SwordController = {
             range = bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE or 14.4
         end
         if range + 2 <= (primary.Position - inst.PrimaryPart.Position).Magnitude then return false end
-
-        local chargeSeconds = type(chargeTime) == 'table' and chargeTime.chargeTime or (type(chargeTime) == 'number' and chargeTime or 0)
-        local ratio = 0
-        if chargeSeconds > 0 and sword.chargedAttack and sword.chargedAttack.maxChargeTimeSec then
-            ratio = math.clamp(chargeSeconds / sword.chargedAttack.maxChargeTimeSec, 0, 1)
-        end
 
         if not config or config.playAnimation ~= false then
             self:playSwordEffect(itemMeta, ratio >= 1, config)
@@ -2640,28 +2755,16 @@ bedwars.SwordController = {
 
         local range = sword.attackRange
         if not range or range == 0 or range ~= range then
-            range = 3.8 * 3
+            range = inputService.TouchEnabled and (bedwars.CombatConstant.REGION_SWORD_CHARACTER_DISTANCE or 12.6) or 3.8 * 3
         end
 
         local charge = type(chargeTime) == 'number' and chargeTime or 0
         local target = self:getTargetInRegion(range, charge)
-        if not target then
-            -- nothing in range, but the swing itself is what a click should look like
-            self:playSwordEffect(itemMeta, false)
-            return
-        end
+        local options = charge > 0 and {chargeTime = charge} or nil
 
-        local ratio = 0
-        if charge > 0 and sword.chargedAttack and sword.chargedAttack.maxChargeTimeSec then
-            ratio = math.clamp(charge / sword.chargedAttack.maxChargeTimeSec, 0, 1)
-        end
-
-        local options
-        if charge > 0 then
-            options = {swingStartTime = workspace:GetServerTimeNow() - charge}
-        end
-        self:sendServerRequest(target, ratio, options)
-        return true
+        -- the real controller funnels hits and misses through attackEntity: a hit sends
+        -- SwordHit with the swing start, a miss plays the swing and sends SwordSwingMiss
+        return self:attackEntity(target, nil, options)
     end,
     swingSwordAtMouse = function(self, chargeTime)
         if self:isClickingTooFast() then return end
@@ -2685,12 +2788,24 @@ bedwars.SwordController = {
         params.FilterType = Enum.RaycastFilterType.Exclude
 
         local mouse = lplr:GetMouse()
+        if not mouse then return end
         local direction = mouse.UnitRay.Direction
         local result = workspace:Raycast(mouse.UnitRay.Origin, direction * 200, params)
         local target = result and self:getEntityFromInstance(result.Instance)
+        local options = type(chargeTime) == 'number' and chargeTime > 0 and {chargeTime = chargeTime} or nil
         if result and target and (primary.Position - result.Instance.Position).Magnitude <= range
             and self:canAttack(target) and self:canSee(target) then
-            self:attackEntity(target, direction, chargeTime)
+            self:attackEntity(target, direction, options)
+            return
+        end
+
+        -- the executors can drop InputEnded, and an auto clicker whose loop outlived its
+        -- release then keeps swinging the viewmodel forever. a swing with no button down
+        -- and nothing under the crosshair is that stale loop, not a real click (trigger
+        -- bot only ever calls this with a target, so it is unaffected)
+        local buttonDown = inputService.TouchEnabled or inputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+        if not buttonDown then
+            self:stopSwingAnimation()
             return
         end
 
@@ -3009,14 +3124,14 @@ bedwars.BlockPlacer = {
         -- pos arrives in grid space (that is what the block selector returns) and
         -- bedwars.placeBlock works in world space. the real placer also places whatever
         -- is in your hand, it is not fixed to the block type it was constructed with
-        placer.placeBlock = function(self, pos)
+        placer.placeBlock = function(self, pos, mouseInfo)
             if typeof(pos) ~= 'Vector3' then return end
             local item = self.blockType or 'wool_white'
             local hand = store.hand
             if hand and hand.toolType == 'block' and hand.tool then
                 item = hand.tool.Name
             end
-            local placed = bedwars.placeBlock(pos * 3, item)
+            local placed = bedwars.placeBlock(pos * 3, item, mouseInfo)
             if placed then
                 self.lastPlaceTimestamp = workspace:GetServerTimeNow()
                 table.insert(self.placed, pos)
@@ -3140,8 +3255,12 @@ end
 ]]
 
 local function calculatePath(target, blockpos)
-    if cache[blockpos] then
-        return unpack(cache[blockpos])
+    local cached = cache[blockpos]
+    -- the path is only valid while the blocks it steps through are still there, and the
+    -- index only refreshes every 0.15s, so a stale entry had Breaker hammering an empty
+    -- cell until it expired
+    if cached and tick() - cached[4] < 0.3 then
+        return unpack(cached)
     end
     local visited, unvisited, distances, air, path = {}, {{0, blockpos}}, {[blockpos] = 0}, {}, {}
 
@@ -3183,13 +3302,47 @@ local function calculatePath(target, blockpos)
         cache[blockpos] = {
             pos,
             cost,
-            path
+            path,
+            tick()
         }
         return pos, cost, path
     end
 end
 
-bedwars.placeBlock = function(pos, item)
+-- the server validates every placement against the mouse block it belongs to, so a
+-- forged one has to carry the same mouseBlockInfo shape the real placer builds
+local function buildMouseBlockInfo(gridPos)
+    local normal = Vector3.new(0, 1, 0)
+    local target = gridPos - normal
+    if not findBlock(target) then
+        local found = false
+        for _, dir in {Vector3.new(0, 1, 0), Vector3.new(0, 0, 1), Vector3.new(0, 0, -1), Vector3.new(1, 0, 0), Vector3.new(-1, 0, 0)} do
+            local other = gridPos + dir
+            if findBlock(other) then
+                target, normal, found = other, -dir, true
+                break
+            end
+        end
+        if not found then return nil end
+    end
+
+    return {
+        target = {
+            blockRef = {blockPosition = target},
+            hitPosition = target * 3 + normal * 1.5,
+            hitNormal = normal
+        },
+        placementPosition = gridPos
+    }
+end
+
+bedwars.placeBlock = function(pos, item, mouseInfo)
+    if typeof(pos) ~= 'Vector3' then return end
+    if lplr:GetAttribute('DenyBlockPlace') then return end
+
+    local blockpos = bedwars.BlockController:getBlockPosition(pos)
+    if findBlock(blockpos) then return end
+
     local itemData = getItem(item)
     local tool = itemData and itemData.tool
     if not tool then
@@ -3206,30 +3359,39 @@ bedwars.placeBlock = function(pos, item)
     local handValue = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
     if handValue and handValue.Value ~= tool then
         switchItem(tool, 0)
+        task.wait()
     end
 
-    bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
+    if not mouseInfo then
+        mouseInfo = buildMouseBlockInfo(blockpos)
+    end
+
+    -- PlaceBlock is a RemoteFunction, so the answer comes back directly (it was being
+    -- treated as a promise, which threw right after the call)
+    local result = bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
         blockType = item,
         position = blockpos,
-        blockData = 0
-    }):andThen(function(result)
-        if result == 'cancelled' then
-            return false, result
-        end
+        blockData = 0,
+        mouseBlockInfo = mouseInfo
+    })
 
-        bedwars.BlockCpsController.lastPlaceTimestamp = workspace:GetServerTimeNow()
-        return true, result
-    end)
+    if result == 'cancelled' then
+        return false, result
+    end
+
+    bedwars.BlockCpsController.lastPlaceTimestamp = workspace:GetServerTimeNow()
+    return true, result
 end
 
 bedwars.breakBlock = function(block, effects, anim, customHealthbar)
     if lplr:GetAttribute('DenyBlockBreak') or not entitylib.isAlive or InfiniteFly.Enabled then return end
     local cost, pos, target, path = math.huge
+    local targetWorld
 
     for _, v in {bedwars.BlockController:getBlockPosition(block.Position)} do
         local dpos, dcost, dpath = calculatePath(block, v * 3)
         if dpos and dcost < cost then
-            cost, pos, target, path = dcost, dpos, v * 3, dpath
+            cost, pos, target, path, targetWorld = dcost, dpos, v * 3, dpath, v * 3
         end
     end
 
@@ -3243,7 +3405,11 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
         if not dblock and typeof(block) == 'Instance' and roundBlockPos(block.Position) == roundBlockPos(pos) then
             dblock, dpos = block, roundBlockPos(pos)
         end
-        if not dblock then return end
+        if not dblock then
+            -- the cached path ends on a cell that is now empty, so drop it
+            if targetWorld then cache[targetWorld] = nil end
+            return
+        end
 
         if (workspace:GetServerTimeNow() - (bedwars.SwordController.lastAttack or 0)) > 0.4 then
             local blockmeta = bedwars.ItemMeta[dblock.Name]
@@ -3264,6 +3430,9 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
                 store.damageBlockFail = tick() + 1
                 return
             end
+
+            -- the block's health changed (or it is gone), so the cached path is stale
+            if targetWorld then cache[targetWorld] = nil end
 
             if effects then
                 customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
