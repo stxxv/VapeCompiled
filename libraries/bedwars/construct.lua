@@ -1459,7 +1459,9 @@ local function rebuildBlockIndex()
     for _, v in collectionService:GetTagged('block') do
         if v:IsA('BasePart') then
             local minX, maxX, minY, maxY, minZ, maxZ = blockCellRange(v)
-            if minX <= maxX and minY <= maxY and minZ <= maxZ then
+            -- a decorative part the size of the map would cost millions of registrations
+            local volume = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1)
+            if minX <= maxX and minY <= maxY and minZ <= maxZ and volume > 0 and volume <= 32768 then
                 local entry = {part = v, min = Vector3.new(minX, minY, minZ), max = Vector3.new(maxX, maxY, maxZ)}
                 for cx = math.floor(minX / BLOCK_CHUNK), math.floor(maxX / BLOCK_CHUNK) do
                     for cy = math.floor(minY / BLOCK_CHUNK), math.floor(maxY / BLOCK_CHUNK) do
@@ -1522,8 +1524,9 @@ local function findBlock(pos)
         end
     end
 
+    -- a miss is not cached: scanning a volume (scaffold, breaker) asks about thousands of
+    -- empty cells per tick, and writing a slot for each one was pure allocation churn
     if not found then
-        blockCellCache[cell] = false
         return nil
     end
     return blockCellCache[cell] or nil
@@ -3336,12 +3339,35 @@ local function buildMouseBlockInfo(gridPos)
     }
 end
 
+-- the engine gates placements (isAllowedPlacement) and only places at its own cadence.
+-- without the same gate every scaffold tick spawned another blocking PlaceBlock invoke,
+-- which floods the remote as soon as placement actually starts succeeding
+local lastPlaceAttempt, recentPlacements = 0, {}
+
+local function canPlaceNow(blockpos)
+    local now = tick()
+    if now - lastPlaceAttempt < 0.05 then return false end
+    lastPlaceAttempt = now
+
+    -- the store index only refreshes every 0.15s, so a cell we just filled still looks
+    -- empty to findBlock and would be placed into twice
+    local placedAt = recentPlacements[blockpos]
+    if placedAt and now - placedAt < 0.5 then return false end
+
+    for cell, at in recentPlacements do
+        if now - at > 0.5 then recentPlacements[cell] = nil end
+    end
+
+    return true
+end
+
 bedwars.placeBlock = function(pos, item, mouseInfo)
     if typeof(pos) ~= 'Vector3' then return end
     if lplr:GetAttribute('DenyBlockPlace') then return end
 
     local blockpos = bedwars.BlockController:getBlockPosition(pos)
     if findBlock(blockpos) then return end
+    if not canPlaceNow(blockpos) then return end
 
     local itemData = getItem(item)
     local tool = itemData and itemData.tool
@@ -3355,32 +3381,41 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
     end
     if not tool then return end
 
-    -- the server only accepts a placement for the block you are actually holding
-    local handValue = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
-    if handValue and handValue.Value ~= tool then
-        switchItem(tool, 0)
-        task.wait()
-    end
-
     if not mouseInfo then
         mouseInfo = buildMouseBlockInfo(blockpos)
     end
+    if not mouseInfo or not mouseInfo.target then return end
 
-    -- PlaceBlock is a RemoteFunction, so the answer comes back directly (it was being
-    -- treated as a promise, which threw right after the call)
-    local result = bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
-        blockType = item,
-        position = blockpos,
-        blockData = 0,
-        mouseBlockInfo = mouseInfo
-    })
-
-    if result == 'cancelled' then
-        return false, result
-    end
-
+    recentPlacements[blockpos] = tick()
     bedwars.BlockCpsController.lastPlaceTimestamp = workspace:GetServerTimeNow()
-    return true, result
+
+    -- PlaceBlock is a RemoteFunction: the answer comes straight back (it was being treated
+    -- as a promise, which threw right after the call). everything that can yield runs off
+    -- the caller's thread, and a rejected placement cannot unwind inside a module's loop
+    local remote = bedwars.ClientDamageBlock:Get('PlaceBlock')
+    task.spawn(function()
+        -- the server only accepts a placement for the block you are actually holding
+        local handValue = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
+        if handValue and handValue.Value ~= tool then
+            switchItem(tool, 0)
+            task.wait()
+        end
+
+        local suc, result = pcall(function()
+            return remote:CallServer({
+                blockType = item,
+                position = blockpos,
+                blockData = 0,
+                mouseBlockInfo = mouseInfo
+            })
+        end)
+
+        if not suc or result == 'cancelled' then
+            recentPlacements[blockpos] = nil
+        end
+    end)
+
+    return true
 end
 
 bedwars.breakBlock = function(block, effects, anim, customHealthbar)

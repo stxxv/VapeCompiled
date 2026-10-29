@@ -1104,9 +1104,15 @@ run(function()
 						horizontal = replicatedStorage.TS.damage['knockback-util']:GetAttribute('ConstantManager_kbDirectionStrength'),
 						vertical = replicatedStorage.TS.damage['knockback-util']:GetAttribute('ConstantManager_kbUpwardStrength')
 					}
+					
+					local check = (not TargetCheck.Enabled) or entitylib.EntityPosition({
+						Range = 50,
+						Part = 'RootPart',
+						Players = true
+					})
 	
-					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbDirectionStrength', constants.horizontal * (Horizontal.Value / 100))
-					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbUpwardStrength', constants.vertical * (Vertical.Value / 100))
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbDirectionStrength', (check and constants.horizontal) or constants.horizontal * (Horizontal.Value / 100))
+					replicatedStorage.TS.damage['knockback-util']:SetAttribute('ConstantManager_kbUpwardStrength', (check and constants.vertical) or constants.vertical * (Vertical.Value / 100))
 				end
 			else
 				if not ce then
@@ -1150,8 +1156,8 @@ run(function()
 			Default = 100,
 			Suffix = '%'
 		})
-		TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
 	end
+	TargetCheck = Velocity:CreateToggle({Name = 'Only when targeting'})
 end)
 
 local AntiFallDirection
