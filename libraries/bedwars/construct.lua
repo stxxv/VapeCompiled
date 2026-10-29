@@ -1433,15 +1433,15 @@ end
 
 local blockIndex, blockIndexTick = {}, 0
 local function getBlockIndex()
-    if tick() - blockIndexTick > 0.5 then
+    --if tick() - blockIndexTick > 0.5 then
         table.clear(blockIndex)
         for _, v in collectionService:GetTagged('block') do
             if v.Size == Vector3.one * 3 then
                 blockIndex[roundBlockPos(v.Position)] = v
             end
         end
-        blockIndexTick = tick()
-    end
+        --blockIndexTick = tick()
+    --end
     return blockIndex
 end
 
