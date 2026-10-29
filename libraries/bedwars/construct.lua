@@ -3169,6 +3169,7 @@ bedwars.placeBlock = function(pos, item)
 			},
         })
     end)
+
     if success then
         bedwars.BlockCpsController.lastPlaceTimestamp = workspace:GetServerTimeNow()
     end

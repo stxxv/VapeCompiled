@@ -4492,7 +4492,7 @@ run(function()
 								local block, blockpos = getPlacedBlock(currentpos)
 								if not block then
 									blockpos = checkAdjacent(blockpos * 3) and blockpos * 3 or blockProximity(currentpos)
-									if blockpos and (workspace:GetServerTimeNow() - bedwars.BlockCpsController.lastPlaceTimestamp) >= ((1 / 12) * 0.5) then
+									if blockpos then
 										task.spawn(bedwars.placeBlock, blockpos, wool, false)
 									end
 								end
@@ -5199,7 +5199,6 @@ run(function()
 	local function attemptBreak(tab, localPosition)
 		if not tab then return end
 		for _, v in tab do
-			for x,d in v do print(x,d) end
 			if (v.Position - localPosition).Magnitude < Range.Value and bedwars.BlockController:isBlockBreakable({blockPosition = v.Position / 3}, lplr) then
 				if not SelfBreak.Enabled and v:GetAttribute('PlacedByUserId') == lplr.UserId then continue end
 				if (v:GetAttribute('BedShieldEndTime') or 0) > workspace:GetServerTimeNow() then continue end
