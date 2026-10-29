@@ -1433,15 +1433,15 @@ end
 
 local blockIndex, blockIndexTick = {}, 0
 local function getBlockIndex()
-    --if tick() - blockIndexTick > 0.5 then
+    if tick() - blockIndexTick > 0.5 then
         table.clear(blockIndex)
         for _, v in collectionService:GetTagged('block') do
             if v.Size == Vector3.one * 3 then
                 blockIndex[roundBlockPos(v.Position)] = v
             end
         end
-        --blockIndexTick = tick()
-    --end
+        blockIndexTick = tick()
+    end
     return blockIndex
 end
 
@@ -3208,19 +3208,18 @@ bedwars.placeBlock = function(pos, item)
         switchItem(tool, 0)
     end
 
-    local blockpos = bedwars.BlockController:getBlockPosition(pos)
-    local success, result = pcall(function()
-        return bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
-            blockType = item,
-            position = blockpos,
-            blockData = 0
-        })
-    end)
+    bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
+        blockType = item,
+        position = blockpos,
+        blockData = 0
+    }):andThen(function(result)
+        if result == 'cancelled' then
+            return false, result
+        end
 
-    if success then
         bedwars.BlockCpsController.lastPlaceTimestamp = workspace:GetServerTimeNow()
-    end
-    return success, result
+        return true, result
+    end)
 end
 
 bedwars.breakBlock = function(block, effects, anim, customHealthbar)
