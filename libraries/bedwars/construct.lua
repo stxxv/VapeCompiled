@@ -3147,17 +3147,26 @@ bedwars.placeBlock = function(pos, item)
     local itemData = getItem(item)
     if not itemData then return end
     -- the server only accepts a placement for the block you are actually holding
-    if itemData.tool then
+    --[[if itemData.tool then
         local hand = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
         if not hand or hand.Value ~= itemData.tool then
             switchItem(itemData.tool, 0)
         end
-    end
+    end]]
     local blockpos = bedwars.BlockController:getBlockPosition(pos)
     local success, result = pcall(function()
         bedwars.ClientDamageBlock:Get('PlaceBlock'):CallServer({
             blockType = item,
-            position = blockpos
+            position = blockpos,
+            blockData = 0,
+			mouseBlockInfo = {
+				target = {
+                    blockRef = {blockPosition = blockpos},
+                    hitPosition = blockpos * 3,
+                    hitNormal = Vector3.zero
+                },
+				placementPosition = blockpos
+			},
         })
     end)
     if success then
