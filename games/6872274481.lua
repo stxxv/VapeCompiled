@@ -917,32 +917,30 @@ run(function()
 end)
 
 run(function()
-	-- mutates the real CombatConstant, emulated tables don't affect server validation
-	if ce then return end
-	
-	local Value
-	
-	Reach = vape.Categories.Combat:CreateModule({
-		Name = 'Reach',
-		Function = function(callback)
-			bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE = callback and Value.Value + 2 or 14.4
-		end,
-		Tooltip = 'Extends attack reach'
-	})
-	Value = Reach:CreateSlider({
-		Name = 'Range',
-		Min = 0,
-		Max = 18,
-		Default = 18,
-		Function = function(val)
-			if Reach.Enabled then
-				bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE = val + 2
+	if not ce then
+		local Value
+		Reach = vape.Categories.Combat:CreateModule({
+			Name = 'Reach',
+			Function = function(callback)
+				bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE = callback and Value.Value + 2 or 14.4
+			end,
+			Tooltip = 'Extends attack reach'
+		})
+		Value = Reach:CreateSlider({
+			Name = 'Range',
+			Min = 0,
+			Max = 18,
+			Default = 18,
+			Function = function(val)
+				if Reach.Enabled then
+					bedwars.CombatConstant.RAYCAST_SWORD_CHARACTER_DISTANCE = val + 2
+				end
+			end,
+			Suffix = function(val)
+				return val == 1 and 'stud' or 'studs'
 			end
-		end,
-		Suffix = function(val)
-			return val == 1 and 'stud' or 'studs'
-		end
-	})
+		})
+	end
 end)
 
 run(function()
@@ -1300,34 +1298,33 @@ run(function()
 end)
 
 run(function()
-	-- needs the real block breaker cooldown, the emulated one is a no-op
-	if ce then return end
+	if not ce then
+		local FastBreak
+		local Time
 	
-	local FastBreak
-	local Time
-	
-	FastBreak = vape.Categories.Blatant:CreateModule({
-		Name = 'FastBreak',
-		Function = function(callback)
-			if callback then
-				repeat
-					bedwars.BlockBreakController.blockBreaker:setCooldown(Time.Value)
-					task.wait(0.1)
-				until not FastBreak.Enabled
-			else
-				bedwars.BlockBreakController.blockBreaker:setCooldown(0.3)
-			end
-		end,
-		Tooltip = 'Decreases block hit cooldown'
-	})
-	Time = FastBreak:CreateSlider({
-		Name = 'Break speed',
-		Min = 0,
-		Max = 0.3,
-		Default = 0.25,
-		Decimal = 100,
-		Suffix = 'seconds'
-	})
+		FastBreak = vape.Categories.Blatant:CreateModule({
+			Name = 'FastBreak',
+			Function = function(callback)
+				if callback then
+					repeat
+						bedwars.BlockBreakController.blockBreaker:setCooldown(Time.Value)
+						task.wait(0.1)
+					until not FastBreak.Enabled
+				else
+					bedwars.BlockBreakController.blockBreaker:setCooldown(0.3)
+				end
+			end,
+			Tooltip = 'Decreases block hit cooldown'
+		})
+		Time = FastBreak:CreateSlider({
+			Name = 'Break speed',
+			Min = 0,
+			Max = 0.3,
+			Default = 0.25,
+			Decimal = 100,
+			Suffix = 'seconds'
+		})
+	end
 end)
 
 local Fly
@@ -1534,17 +1531,17 @@ run(function()
 		Tooltip = 'Expands attack hitbox'
 	})
 	if not ce then
-	Mode = HitBoxes:CreateDropdown({
-		Name = 'Mode',
-		List = {'Sword', 'Player'},
-		Function = function()
-			if HitBoxes.Enabled then
-				HitBoxes:Toggle()
-				HitBoxes:Toggle()
-			end
-		end,
-		Tooltip = 'Sword - Increases the range around you to hit entities\nPlayer - Increases the players hitbox'
-	})
+		Mode = HitBoxes:CreateDropdown({
+			Name = 'Mode',
+			List = {'Sword', 'Player'},
+			Function = function()
+				if HitBoxes.Enabled then
+					HitBoxes:Toggle()
+					HitBoxes:Toggle()
+				end
+			end,
+			Tooltip = 'Sword - Increases the range around you to hit entities\nPlayer - Increases the players hitbox'
+		})
 	end
 	Expand = HitBoxes:CreateSlider({
 		Name = 'Expand amount',
@@ -1570,18 +1567,16 @@ run(function()
 end)
 
 run(function()
-	-- debug.setconstant needs a debug enabled executor, hiding it on emulated ones
-	if ce then return end
-	
-	vape.Categories.Blatant:CreateModule({
-		Name = 'KeepSprint',
-		Function = function(callback)
-			if ce then return end
-			debug.setconstant(bedwars.SprintController.startSprinting, 5, callback and 'blockSprinting' or 'blockSprint')
-			bedwars.SprintController:stopSprinting()
-		end,
-		Tooltip = 'Lets you sprint with a speed potion.'
-	})
+	if not ce then
+		vape.Categories.Blatant:CreateModule({
+			Name = 'KeepSprint',
+			Function = function(callback)
+				debug.setconstant(bedwars.SprintController.startSprinting, 5, callback and 'blockSprinting' or 'blockSprint')
+				bedwars.SprintController:stopSprinting()
+			end,
+			Tooltip = 'Lets you sprint with a speed potion.'
+		})
+	end
 end)
 
 local Attacking
@@ -2407,108 +2402,107 @@ run(function()
 end)
 
 run(function()
-	-- hooks the real projectile controller, emulated executors have nothing to hook
-	if ce then return end
+	if not ce then
+		local TargetPart
+		local Targets
+		local FOV
+		local OtherProjectiles
+		local rayCheck = RaycastParams.new()
+		rayCheck.FilterType = Enum.RaycastFilterType.Include
+		rayCheck.FilterDescendantsInstances = {workspace:FindFirstChild('Map')}
+		local old
 	
-	local TargetPart
-	local Targets
-	local FOV
-	local OtherProjectiles
-	local rayCheck = RaycastParams.new()
-	rayCheck.FilterType = Enum.RaycastFilterType.Include
-	rayCheck.FilterDescendantsInstances = {workspace:FindFirstChild('Map')}
-	local old
+		local ProjectileAimbot = vape.Categories.Blatant:CreateModule({
+			Name = 'ProjectileAimbot',
+			Function = function(callback)
+				if callback then
+					old = bedwars.ProjectileController.calculateImportantLaunchValues
+					bedwars.ProjectileController.calculateImportantLaunchValues = function(...)
+						local self, projmeta, worldmeta, origin, shootpos = ...
+						local plr = entitylib.EntityMouse({
+							Part = 'RootPart',
+							Range = FOV.Value,
+							Players = Targets.Players.Enabled,
+							NPCs = Targets.NPCs.Enabled,
+							Wallcheck = Targets.Walls.Enabled,
+							Origin = entitylib.isAlive and (shootpos or entitylib.character.RootPart.Position) or Vector3.zero
+						})
 	
-	local ProjectileAimbot = vape.Categories.Blatant:CreateModule({
-		Name = 'ProjectileAimbot',
-		Function = function(callback)
-			if callback then
-				old = bedwars.ProjectileController.calculateImportantLaunchValues
-				bedwars.ProjectileController.calculateImportantLaunchValues = function(...)
-					local self, projmeta, worldmeta, origin, shootpos = ...
-					local plr = entitylib.EntityMouse({
-						Part = 'RootPart',
-						Range = FOV.Value,
-						Players = Targets.Players.Enabled,
-						NPCs = Targets.NPCs.Enabled,
-						Wallcheck = Targets.Walls.Enabled,
-						Origin = entitylib.isAlive and (shootpos or entitylib.character.RootPart.Position) or Vector3.zero
-					})
+						if plr then
+							local pos = shootpos or self:getLaunchPosition(origin)
+							if not pos then
+								return old(...)
+							end
 	
-					if plr then
-						local pos = shootpos or self:getLaunchPosition(origin)
-						if not pos then
-							return old(...)
-						end
+							if (not OtherProjectiles.Enabled) and not projmeta.projectile:find('arrow') then
+								return old(...)
+							end
 	
-						if (not OtherProjectiles.Enabled) and not projmeta.projectile:find('arrow') then
-							return old(...)
-						end
+							local meta = projmeta:getProjectileMeta()
+							local lifetime = (worldmeta and meta.predictionLifetimeSec or meta.lifetimeSec or 3)
+							local gravity = (meta.gravitationalAcceleration or 196.2) * projmeta.gravityMultiplier
+							local projSpeed = (meta.launchVelocity or 100)
+							local offsetpos = pos + (projmeta.projectile == 'owl_projectile' and Vector3.zero or projmeta.fromPositionOffset)
+							local balloons = plr.Character:GetAttribute('InflatedBalloons')
+							local playerGravity = workspace.Gravity
 	
-						local meta = projmeta:getProjectileMeta()
-						local lifetime = (worldmeta and meta.predictionLifetimeSec or meta.lifetimeSec or 3)
-						local gravity = (meta.gravitationalAcceleration or 196.2) * projmeta.gravityMultiplier
-						local projSpeed = (meta.launchVelocity or 100)
-						local offsetpos = pos + (projmeta.projectile == 'owl_projectile' and Vector3.zero or projmeta.fromPositionOffset)
-						local balloons = plr.Character:GetAttribute('InflatedBalloons')
-						local playerGravity = workspace.Gravity
+							if balloons and balloons > 0 then
+								playerGravity = (workspace.Gravity * (1 - ((balloons >= 4 and 1.2 or balloons >= 3 and 1 or 0.975))))
+							end
 	
-						if balloons and balloons > 0 then
-							playerGravity = (workspace.Gravity * (1 - ((balloons >= 4 and 1.2 or balloons >= 3 and 1 or 0.975))))
-						end
+							if plr.Character.PrimaryPart:FindFirstChild('rbxassetid://8200754399') then
+								playerGravity = 6
+							end
 	
-						if plr.Character.PrimaryPart:FindFirstChild('rbxassetid://8200754399') then
-							playerGravity = 6
-						end
-	
-						if plr.Player:GetAttribute('IsOwlTarget') then
-							for _, owl in collectionService:GetTagged('Owl') do
-								if owl:GetAttribute('Target') == plr.Player.UserId and owl:GetAttribute('Status') == 2 then
-									playerGravity = 0
+							if plr.Player:GetAttribute('IsOwlTarget') then
+								for _, owl in collectionService:GetTagged('Owl') do
+									if owl:GetAttribute('Target') == plr.Player.UserId and owl:GetAttribute('Status') == 2 then
+										playerGravity = 0
+									end
 								end
+							end
+	
+							local newlook = CFrame.new(offsetpos, plr[TargetPart.Value].Position) * CFrame.new(projmeta.projectile == 'owl_projectile' and Vector3.zero or Vector3.new(bedwars.BowConstantsTable.RelX, bedwars.BowConstantsTable.RelY, bedwars.BowConstantsTable.RelZ))
+							local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck)
+							if calc then
+								targetinfo.Targets[plr] = os.clock() + 1
+								return {
+									initialVelocity = CFrame.new(newlook.Position, calc).LookVector * projSpeed,
+									positionFrom = offsetpos,
+									deltaT = lifetime,
+									gravitationalAcceleration = gravity,
+									drawDurationSeconds = 5
+								}
 							end
 						end
 	
-						local newlook = CFrame.new(offsetpos, plr[TargetPart.Value].Position) * CFrame.new(projmeta.projectile == 'owl_projectile' and Vector3.zero or Vector3.new(bedwars.BowConstantsTable.RelX, bedwars.BowConstantsTable.RelY, bedwars.BowConstantsTable.RelZ))
-						local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck)
-						if calc then
-							targetinfo.Targets[plr] = os.clock() + 1
-							return {
-								initialVelocity = CFrame.new(newlook.Position, calc).LookVector * projSpeed,
-								positionFrom = offsetpos,
-								deltaT = lifetime,
-								gravitationalAcceleration = gravity,
-								drawDurationSeconds = 5
-							}
-						end
+						return old(...)
 					end
-	
-					return old(...)
+				else
+					bedwars.ProjectileController.calculateImportantLaunchValues = old
 				end
-			else
-				bedwars.ProjectileController.calculateImportantLaunchValues = old
-			end
-		end,
-		Tooltip = 'Silently adjusts your aim towards the enemy'
-	})
-	Targets = ProjectileAimbot:CreateTargets({
-		Players = true,
-		Walls = true
-	})
-	TargetPart = ProjectileAimbot:CreateDropdown({
-		Name = 'Part',
-		List = {'RootPart', 'Head'}
-	})
-	FOV = ProjectileAimbot:CreateSlider({
-		Name = 'FOV',
-		Min = 1,
-		Max = 1000,
-		Default = 1000
-	})
-	OtherProjectiles = ProjectileAimbot:CreateToggle({
-		Name = 'Other Projectiles',
-		Default = true
-	})
+			end,
+			Tooltip = 'Silently adjusts your aim towards the enemy'
+		})
+		Targets = ProjectileAimbot:CreateTargets({
+			Players = true,
+			Walls = true
+		})
+		TargetPart = ProjectileAimbot:CreateDropdown({
+			Name = 'Part',
+			List = {'RootPart', 'Head'}
+		})
+		FOV = ProjectileAimbot:CreateSlider({
+			Name = 'FOV',
+			Min = 1,
+			Max = 1000,
+			Default = 1000
+		})
+		OtherProjectiles = ProjectileAimbot:CreateToggle({
+			Name = 'Other Projectiles',
+			Default = true
+		})
+	end
 end)
 
 run(function()
@@ -7768,56 +7762,53 @@ run(function()
 		end
 	end
 	
-	local function clean(callback)
-		if callback then
-			if OpenInv.Enabled then
-				lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = false
-	
-				UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
-					if obj.Name == 'hotbar' then
-						obj['1'].ItemsHotbar['10'].Visible = OpenInv.Enabled
-					end
-				end))
-			end
-	
-			if NoHotbar.Enabled then
-				for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
-					v:FindFirstChildOfClass('TextLabel').Visible = false
-				end
-	
-				UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
-					if obj.Name == 'hotbar' then
-						for i,v in obj['1'].ItemsHotbar:GetChildren() do
-							v:FindFirstChildOfClass('TextLabel').Visible = NoHotbar.Enabled
-						end
-					end
-				end))
-			end
-	
-			if KillFeed.Enabled then
-				lplr.PlayerGui.KillFeedGui.Enabled = false
-			end
-	
-			if OldTabList.Enabled then
-				starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
-			end
-		else
-			lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = true
-	
-			for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
-				v:FindFirstChildOfClass('TextLabel').Visible = true
-			end
-	
-			lplr.PlayerGui.KillFeedGui.Enabled = true
-			starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
-		end
-	end
-	
 	UICleanup = vape.Legit:CreateModule({
 		Name = 'UI Cleanup',
 		Function = function(callback)
 			if ce then
-				clean(callback)
+				if callback then
+					if OpenInv.Enabled then
+						lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = false
+	
+						UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
+							if obj.Name == 'hotbar' then
+								obj['1'].ItemsHotbar['10'].Visible = OpenInv.Enabled
+							end
+						end))
+					end
+	
+					if NoHotbar.Enabled then
+						for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
+							v:FindFirstChildOfClass('TextLabel').Visible = false
+						end
+	
+						UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
+							if obj.Name == 'hotbar' then
+								for i,v in obj['1'].ItemsHotbar:GetChildren() do
+									v:FindFirstChildOfClass('TextLabel').Visible = NoHotbar.Enabled
+								end
+							end
+						end))
+					end
+	
+					if KillFeed.Enabled then
+						lplr.PlayerGui.KillFeedGui.Enabled = false
+					end
+	
+					if OldTabList.Enabled then
+						starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+					end
+				else
+					lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = true
+	
+					for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
+						v:FindFirstChildOfClass('TextLabel').Visible = true
+					end
+	
+					lplr.PlayerGui.KillFeedGui.Enabled = true
+					starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+				end
+	
 				return
 			end
 	
@@ -8064,7 +8055,15 @@ run(function()
 	WinEffect = vape.Legit:CreateModule({
 		Name = 'WinEffect',
 		Function = function(callback)
-			if ce then return end
+			if not getconnections then
+				if callback then
+					notif('Vape', 'unable to use WinEffect, no getconnections', 4)
+					WinEffect:Toggle()
+				end
+	
+				return
+			end
+			
 			if callback then
 				WinEffect:Clean(vapeEvents.MatchEndEvent.Event:Connect(function()
 					for i, v in getconnections(bedwars.Client:Get('WinEffectTriggered').instance.OnClientEvent) do
