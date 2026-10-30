@@ -448,57 +448,51 @@ if not ce then
 					blockhealthbar.breakingBlockPosition = dpos
 				end
 
-				bedwars.ClientDamageBlock
-					:Get("DamageBlock")
-					:CallServerAsync({
-						blockRef = { blockPosition = dpos },
-						hitPosition = pos,
-						hitNormal = Vector3.FromNormalId(Enum.NormalId.Top),
-					})
-					:andThen(function(result)
-						if result then
-							if result == "cancelled" then
-								store.damageBlockFail = tick() + 1
-								return
-							end
+				local damageBlockRemote = bedwars.ClientDamageBlock:Get("DamageBlock")
+				damageBlockRemote:CallServerAsync({ blockRef = { blockPosition = dpos }, hitPosition = pos, hitNormal = Vector3.FromNormalId(Enum.NormalId.Top) }):andThen(function(result)
+					if result then
+						if result == "cancelled" then
+							store.damageBlockFail = tick() + 1
+							return
+						end
 
-							if effects then
-								local blockdmg = (
-									blockhealthbar.blockHealth
-									- (result == "destroyed" and 0 or getBlockHealth(dblock, dpos))
-								)
-								customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
-								customHealthbar(
-									bedwars.BlockBreaker,
-									{ blockPosition = dpos },
-									blockhealthbar.blockHealth,
-									dblock:GetAttribute("MaxHealth"),
-									blockdmg,
-									dblock
-								)
-								blockhealthbar.blockHealth = math.max(blockhealthbar.blockHealth - blockdmg, 0)
+						if effects then
+							local blockdmg = (
+								blockhealthbar.blockHealth
+								- (result == "destroyed" and 0 or getBlockHealth(dblock, dpos))
+							)
+							customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
+							customHealthbar(
+								bedwars.BlockBreaker,
+								{ blockPosition = dpos },
+								blockhealthbar.blockHealth,
+								dblock:GetAttribute("MaxHealth"),
+								blockdmg,
+								dblock
+							)
+							blockhealthbar.blockHealth = math.max(blockhealthbar.blockHealth - blockdmg, 0)
 
-								if blockhealthbar.blockHealth <= 0 then
-									bedwars.BlockBreaker.breakEffect:playBreak(dblock.Name, dpos, lplr)
-									bedwars.BlockBreaker.healthbarMaid:DoCleaning()
-									blockhealthbar.breakingBlockPosition = Vector3.zero
-								else
-									bedwars.BlockBreaker.breakEffect:playHit(dblock.Name, dpos, lplr)
-								end
-							end
-
-							if anim then
-								local animation = bedwars.AnimationUtil:playAnimation(
-									lplr,
-									bedwars.BlockController:getAnimationController():getAssetId(1)
-								)
-								bedwars.ViewmodelController:playAnimation(15)
-								task.wait(0.3)
-								animation:Stop()
-								animation:Destroy()
+							if blockhealthbar.blockHealth <= 0 then
+								bedwars.BlockBreaker.breakEffect:playBreak(dblock.Name, dpos, lplr)
+								bedwars.BlockBreaker.healthbarMaid:DoCleaning()
+								blockhealthbar.breakingBlockPosition = Vector3.zero
+							else
+								bedwars.BlockBreaker.breakEffect:playHit(dblock.Name, dpos, lplr)
 							end
 						end
-					end)
+
+						if anim then
+							local animation = bedwars.AnimationUtil:playAnimation(
+								lplr,
+								bedwars.BlockController:getAnimationController():getAssetId(1)
+							)
+							bedwars.ViewmodelController:playAnimation(15)
+							task.wait(0.3)
+							animation:Stop()
+							animation:Destroy()
+						end
+					end
+				end)
 
 				if effects then
 					return pos, path, target
@@ -541,9 +535,7 @@ if not ce then
 					local currentHand, toolType = new.Inventory.observedInventory.inventory.hand, ""
 					if currentHand then
 						local handData = bedwars.ItemMeta[currentHand.itemType]
-						toolType = handData.sword and "sword"
-							or handData.block and "block"
-							or currentHand.itemType:find("bow") and "bow"
+						toolType = handData.sword and "sword" or handData.block and "block" or currentHand.itemType:find("bow") and "bow"
 					end
 
 					store.hand = {
@@ -969,11 +961,10 @@ bedwars.Roact = {
 }
 
 bedwars.QueryUtil = {
-	isQueryIgnored = function(part)
-		if not part:IsA("BasePart") then
+	isQueryIgnored = function(_, part)
+		if not (typeof(part) == "Instance" and part:IsA("BasePart")) then
 			return false
 		end
-
 		return part:GetAttribute("gamecore_GameQueryIgnore") == true
 	end,
 	setQueryIgnored = function(self, part, tog)
@@ -987,7 +978,7 @@ bedwars.QueryUtil = {
 		part:SetAttribute("gamecore_GameQueryIgnore", tog)
 
 		if self.ADJUST_CAN_QUERY then
-			a2.CanQuery = tog
+			part.CanQuery = not tog
 		end
 	end,
 	raycast = function(self, origin: Vector3, direction: Vector3, raycastParams: RaycastParams?, options: table?)
@@ -1018,7 +1009,7 @@ bedwars.QueryUtil = {
 			if hitRes then
 				local hitInst = hitRes.Instance
 
-				if not bedwars.QueryUtil.isQueryIgnored(hitInst) then
+				if not bedwars.QueryUtil:isQueryIgnored(hitInst) then
 					if not ignore or not ignore(hitInst) then
 						break
 					end
@@ -1618,6 +1609,18 @@ local function cellBounds(part)
 	return minX, maxX, minY, maxY, minZ, maxZ
 end
 
+-- the cell of a part nearest a world position. a merged part stands for dozens of cells and
+-- its centre can sit on the far side of it, so the cell you can reach is the one nearest you,
+-- not the part's own position
+local function nearestCell(part, position)
+	local minX, maxX, minY, maxY, minZ, maxZ = cellBounds(part)
+	if not minX then
+		return getKey(part.Position / BLOCK_STUDS)
+	end
+	local cell = getKey(position / BLOCK_STUDS)
+	return Vector3.new(math.clamp(cell.X, minX, maxX), math.clamp(cell.Y, minY, maxY), math.clamp(cell.Z, minZ, maxZ))
+end
+
 local function containedList(part)
 	local list = {}
 	local minX, maxX, minY, maxY, minZ, maxZ = cellBounds(part)
@@ -1892,7 +1895,27 @@ bedwars.BlockController = {
 		end
 		return nil
 	end,
-	isBlockBreakable = function()
+	-- BlockEngine:isBlockBreakable: a NoBreak part is never breakable, and the game hooks the
+	-- check to cancel a bed for the team that owns it (Team<N>NoBreak on the bed part) and to
+	-- cancel blocks placed by a player who may not break their own (Player<UserId>NoBreak)
+	isBlockBreakable = function(_, breakTable, plr)
+		if typeof(breakTable) ~= "table" then
+			return false
+		end
+		local block = findBlock(breakTable.blockPosition)
+		if block and block:GetAttribute("NoBreak") == true then
+			return false
+		end
+		if not block or not plr then
+			return true
+		end
+		local team = tostring(plr:GetAttribute("Team") or "")
+		if team ~= "" and block:GetAttribute("Team" .. team .. "NoBreak") == true then
+			return false
+		end
+		if block:GetAttribute("Player" .. tostring(plr.UserId) .. "NoBreak") == true then
+			return false
+		end
 		return true
 	end,
 	-- BlockEngine:isAllowedPlacement, emulated. the real one runs two checks:
@@ -2026,9 +2049,18 @@ bedwars.AnimationUtil = {
 -- place mode casts 6 blocks out, skips decoration that is not a block, resolves the part
 -- through the handler registry, and takes the cell from the hit face - a merged part
 -- covers dozens of cells, so its centre is not the one being pointed at.
-local SELECT_RANGE = 6 * BLOCK_STUDS * 3.5
+local SELECT_RANGE = 6 * BLOCK_STUDS
 
+-- the game parks its own visuals in Workspace - the block highlight box, break effects,
+-- lobby props, drones - and marks each one with this attribute so its queries step over
+-- them (GameQueryUtil:isQueryIgnored). they are ordinary queryable parts, so a plain
+-- workspace raycast lands on the highlight box sitting over the highlighted block unless
+-- it is filtered the same way. that is what made the emulated selector answer for a
+-- different block than the one the player can see highlighted
 local function nearestContainedCell(handler, block, hitCell)
+	if not handler then
+		return nil
+	end
 	local best, bestMagnitude
 	for _, cell in handler:getContainedPositions(block) do
 		local magnitude = (cell - hitCell).Magnitude
@@ -2048,6 +2080,11 @@ local function getMouseInfo(_, mode, params)
 	-- mode 0 is PLACE and 1 is SELECT (BlockSelectorMode); only PLACE skips the
 	-- attribute the game uses to keep build-only props out of the way
 	local place = mode == nil or mode == 0
+	-- range is in studs and 6 blocks is the default; the ray then casts 3.5x that
+	local range = params and params.range
+	if not range or range ~= range or range == 0 then
+		range = SELECT_RANGE
+	end
 
 	-- callers pass {ray = Ray}; anything else falls back to the mouse, which is what the
 	-- real selector does when it is handed no ray
@@ -2064,40 +2101,52 @@ local function getMouseInfo(_, mode, params)
 	queryParams.FilterType = Enum.RaycastFilterType.Blacklist
 	queryParams.FilterDescendantsInstances = { character }
 
-	local result = workspace:Raycast(origin, direction * SELECT_RANGE, queryParams)
+	local function cast()
+		return workspace:Raycast(origin, direction * (range * 3.5), queryParams)
+	end
+
+	local result = cast()
 	while
 		result
 		and (
 			collectionService:HasTag(result.Instance, "block:no-collision")
+			or bedwars.QueryUtil:isQueryIgnored(result.Instance)
 			or (place and result.Instance:GetAttribute("BlockEngine_Select_IgnorePlaceMode"))
 		)
 	do
 		table.insert(queryParams.FilterDescendantsInstances, result.Instance)
-		result = workspace:Raycast(origin, direction * SELECT_RANGE, queryParams)
+		result = cast()
 	end
 
-	if result and result.Instance:IsA("BasePart") and (result.Position - root.Position).Magnitude <= SELECT_RANGE then
+	if result and result.Instance:IsA("BasePart") and (result.Position - root.Position).Magnitude <= range then
 		local block = bedwars.BlockController:getBlockInstanceFromChild(result.Instance)
 		local handler = block and bedwars.BlockController:getHandlerRegistry():getHandler(block.Name)
 		local meta = handler and handler:getBlockMeta()
-		if not block or (place and meta and meta.denyPlaceOn) then
-			return nil
+		-- a hit that is not a block, or one you may not build on, falls through to the
+		-- downward search below exactly like the real selector instead of giving up
+		if block and not (place and meta and meta.denyPlaceOn) then
+			-- hitPosition stays world and sits on the face, so the cell is taken after
+			-- pulling the point inside the block by its normal
+			local hitPoint = result.Position - result.Normal * 0.1
+			local gridPos
+			if block:GetAttribute("GreedyBlock") == true then
+				-- a greedy part stands for dozens of cells and the real selector reads its
+				-- own cell straight off the hit point instead of walking every one
+				gridPos = roundBlockPos(hitPoint)
+			else
+				gridPos = nearestContainedCell(handler, block, hitPoint / BLOCK_STUDS) or roundBlockPos(hitPoint)
+			end
+
+			return {
+				target = {
+					blockInstance = block,
+					blockRef = { blockPosition = gridPos },
+					hitPosition = result.Position,
+					hitNormal = result.Normal,
+				},
+				placementPosition = gridPos + result.Normal.Unit,
+			}
 		end
-
-		-- hitPosition stays world and sits on the face, so the cell is taken after
-		-- pulling the point inside the block by its normal
-		local hitCell = (result.Position - result.Normal * 0.1) / BLOCK_STUDS
-		local gridPos = nearestContainedCell(handler, block, hitCell) or roundBlockPos(hitCell)
-
-		return {
-			target = {
-				blockInstance = block,
-				blockRef = { blockPosition = gridPos },
-				hitPosition = result.Position,
-				hitNormal = result.Normal,
-			},
-			placementPosition = gridPos + result.Normal.Unit,
-		}
 	end
 
 	if not place then
@@ -3739,6 +3788,15 @@ bedwars.BlockPlacer = {
 			if typeof(pos) ~= "Vector3" then
 				return
 			end
+			if not mouseInfo then
+				-- this is the mouseBlockInfo the real click path hands to placeBlock: the
+				-- block the player has highlighted. used only when it is the cell being
+				-- placed, so a caller aiming somewhere else keeps its own answer
+				mouseInfo = getMouseInfo(nil, 0)
+				if mouseInfo and mouseInfo.placementPosition ~= pos then
+					mouseInfo = nil
+				end
+			end
 			local item = self.blockType or "wool_white"
 			local hand = store.hand
 			if hand and hand.toolType == "block" and hand.tool then
@@ -3773,18 +3831,14 @@ bedwars.BlockKickerKitController = {
 }
 bedwars.CannonHandController = {
 	launchSelf = function(self, plr)
-		bedwars.Client
-			:Get("LaunchSelfFromCannon")
-			:CallServer({
-				cannonBlockPos = plr.Position,
-			})
-			:andThen(function()
-				if entitylib.isAlive then
-					lplr.Character.PrimaryPart:ApplyImpulse(
-						lplr.Character.PrimaryPart.LookVector * (lplr.Character.PrimaryPart.AssemblyMass or 1) * 200
-					)
-				end
-			end)
+		local launchSelfRemote = bedwars.Client:Get("LaunchSelfFromCannon")
+		launchSelfRemote:CallServer({ cannonBlockPos = plr.Position }):andThen(function()
+			if entitylib.isAlive then
+				lplr.Character.PrimaryPart:ApplyImpulse(
+					lplr.Character.PrimaryPart.LookVector * (lplr.Character.PrimaryPart.AssemblyMass or 1) * 200
+				)
+			end
+		end)
 	end,
 }
 bedwars.CatController = {
@@ -3826,28 +3880,21 @@ bedwars.LaunchPadController = {
 		local strength, dir =
 			pad:GetAttribute("Strength") or 1, workspace:GetAttribute("Direction") or Vector3.new(0, 1, 0)
 		task.spawn(function()
-			bedwars.Client
-				:Get("UseLaunchPad")
-				:SendToServer({
-					launchPad = pad,
-				})
-				:andThen(function()
-					lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			local useLaunchPad = bedwars.Client:Get("UseLaunchPad")
+			useLaunchPad:SendToServer({ launchPad = pad }):andThen(function()
+				lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 
-					local plrMass = lplr.Character.PrimaryPart.AssemblyMass * 100 * strength
-					lplr.Character.PrimaryPart:ApplyImpulse(Vector3.new(plrMass, plrMass, plrMass) * dir)
-				end)
+				local plrMass = lplr.Character.PrimaryPart.AssemblyMass * 100 * strength
+				lplr.Character.PrimaryPart:ApplyImpulse(Vector3.new(plrMass, plrMass, plrMass) * dir)
+			end)
 		end)
 	end,
 }
 bedwars.ScytheController = {
 	playLocalAnimation = function()
-		return bedwars.AnimationUtil:playAnimation(
-			lplr,
-			bedwars.BlockController
-				:getAnimationController()
-				:getAssetId(bedwars.AnimationUtil:fetchAnimationIndexId("SCYTHE_SWING"))
-		)
+		local animationId = bedwars.AnimationUtil:fetchAnimationIndexId("SCYTHE_SWING")
+		local assetId = bedwars.BlockController:getAnimationController():getAssetId(animationId)
+		return bedwars.AnimationUtil:playAnimation(lplr, assetId)
 	end,
 }
 bedwars.SpiritAssassinController = {
@@ -4032,6 +4079,16 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 	if not mouseInfo or not mouseInfo.target then
 		return
 	end
+	-- rebuilt field by field like the real placer, which is what keeps blockInstance and
+	-- anything else the selector carries out of a remote that typechecks its argument
+	mouseInfo = {
+		target = {
+			blockRef = { blockPosition = mouseInfo.target.blockRef.blockPosition },
+			hitPosition = mouseInfo.target.hitPosition,
+			hitNormal = mouseInfo.target.hitNormal,
+		},
+		placementPosition = mouseInfo.placementPosition or blockpos,
+	}
 
 	-- stands in for the local block the real placer creates before it sends anything:
 	-- the cell reads as taken until the server's copy replicates or it says no
@@ -4073,6 +4130,41 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 	return true
 end
 
+-- one break swing at a time. Breaker calls breakBlock at its update rate, and a fresh track
+-- per call stacked them up, leaving the arm and the viewmodel swinging after the target was
+-- already out of range
+local breakSwing
+local function playBreakSwing()
+	local previous = breakSwing
+	if previous then
+		previous.animation:Stop()
+		previous.animation:Destroy()
+		if previous.viewmodel then
+			previous.viewmodel:Stop()
+			previous.viewmodel:Destroy()
+		end
+	end
+
+	local swing = {
+		animation = bedwars.AnimationUtil:playAnimation(lplr, bedwars.BlockController:getAnimationController():getAssetId(1)),
+		viewmodel = bedwars.ViewmodelController:playAnimation(15),
+	}
+	breakSwing = swing
+
+	task.delay(0.3, function()
+		if breakSwing ~= swing then
+			return
+		end
+		breakSwing = nil
+		swing.animation:Stop()
+		swing.animation:Destroy()
+		if swing.viewmodel then
+			swing.viewmodel:Stop()
+			swing.viewmodel:Destroy()
+		end
+	end)
+end
+
 bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 	if lplr:GetAttribute("DenyBlockBreak") or not entitylib.isAlive or InfiniteFly.Enabled then
 		return
@@ -4080,7 +4172,15 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 	local cost, pos, target, path = math.huge
 	local targetWorld
 
-	for _, v in { bedwars.BlockController:getBlockPosition(block.Position) } do
+	-- the part's own position is the middle of it: on a merged part that cell is usually
+	-- walled in by the rest of the part, so calculatePath never finds an air neighbour and
+	-- Breaker gave up. the cell nearest you is the one you can actually break from
+	local cell = bedwars.BlockController:getBlockPosition(block.Position)
+	if typeof(block) == "Instance" then
+		cell = nearestCell(block, entitylib.character.RootPart.Position)
+	end
+
+	for _, v in { cell } do
 		local dpos, dcost, dpath = calculatePath(block, v * 3)
 		if dpos and dcost < cost then
 			cost, pos, target, path, targetWorld = dcost, dpos, v * 3, dpath, v * 3
@@ -4116,50 +4216,37 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 			end
 		end
 
-		bedwars.ClientDamageBlock
-			:Get("DamageBlock")
-			:CallServerAsync({
-				blockRef = { blockPosition = dpos },
-				hitPosition = pos,
-				hitNormal = Vector3.FromNormalId(Enum.NormalId.Top),
-			})
-			:andThen(function(result)
-				if not result then
-					return
-				end
-				if result == "cancelled" then
-					store.damageBlockFail = tick() + 1
-					return
-				end
+		local damageBlockRemote = bedwars.ClientDamageBlock:Get("DamageBlock")
+		damageBlockRemote:CallServerAsync({ blockRef = { blockPosition = dpos }, hitPosition = pos, hitNormal = Vector3.FromNormalId(Enum.NormalId.Top) }):andThen(function(result)
+			if not result then
+				return
+			end
+			if result == "cancelled" then
+				store.damageBlockFail = tick() + 1
+				return
+			end
 
-				-- the block's health changed (or it is gone), so the cached path is stale
-				if targetWorld then
-					cache[targetWorld] = nil
-				end
+			-- the block's health changed (or it is gone), so the cached path is stale
+			if targetWorld then
+				cache[targetWorld] = nil
+			end
 
-				if effects then
-					customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
-					customHealthbar(
-						bedwars.BlockBreaker,
-						{ blockPosition = dpos },
-						0,
-						dblock:GetAttribute("MaxHealth"),
-						dblock:GetAttribute("Health"),
-						dblock
-					)
-				end
+			if effects then
+				customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
+				customHealthbar(
+					bedwars.BlockBreaker,
+					{ blockPosition = dpos },
+					0,
+					dblock:GetAttribute("MaxHealth"),
+					dblock:GetAttribute("Health"),
+					dblock
+				)
+			end
 
-				if anim then
-					local animation = bedwars.AnimationUtil:playAnimation(
-						lplr,
-						bedwars.BlockController:getAnimationController():getAssetId(1)
-					)
-					bedwars.ViewmodelController:playAnimation(15)
-					task.wait(0.3)
-					animation:Stop()
-					animation:Destroy()
-				end
-			end)
+			if anim then
+				playBreakSwing()
+			end
+		end)
 
 		if effects then
 			return pos, path, target
