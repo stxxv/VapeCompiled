@@ -5032,6 +5032,7 @@ run(function()
 	local InstantBreak
 	local LimitItem
 	local customlist, parts = {}, {}
+	local healthbarProgress
 	
 	local function customHealthbar(self, blockRef, health, maxHealth, changeHealth, block)
 		if block:GetAttribute('NoHealthbar') then return end
@@ -5042,6 +5043,7 @@ run(function()
 			local percent = math.clamp(health / maxHealth, 0, 1)
 			local cleanCheck = true
 			local part = Instance.new('Part')
+			healthbarProgress = healthbarProgress or bedwars.Roact.createRef()
 			part.Size = Vector3.one
 			part.CFrame = CFrame.new(bedwars.BlockController:getWorldPosition(blockRef.blockPosition))
 			part.Transparency = 1
@@ -5102,7 +5104,7 @@ run(function()
 					}, {
 						create('UICorner', {CornerRadius = UDim.new(1, 0)}),
 						create('Frame', {
-							[bedwars.Roact.Ref] = self.healthbarProgressRef,
+							[bedwars.Roact.Ref] = healthbarProgress,
 							Size = UDim2.fromScale(percent, 1),
 							BackgroundColor3 = Color3.fromHSV(math.clamp(percent / 2.5, 0, 1), 0.89, 0.75)
 						}, {create('UICorner', {CornerRadius = UDim.new(1, 0)})})
@@ -5126,9 +5128,13 @@ run(function()
 				end
 			end)
 		end
+		
+		if not (healthbarProgress and healthbarProgress:getValue()) then
+		    return
+		end
 	
 		local newpercent = math.clamp((health - changeHealth) / maxHealth, 0, 1)
-		tweenService:Create(self.healthbarProgressRef:getValue(), TweenInfo.new(0.3), {
+		tweenService:Create(healthbarProgress:getValue(), TweenInfo.new(0.3), {
 			Size = UDim2.fromScale(newpercent, 1), BackgroundColor3 = Color3.fromHSV(math.clamp(newpercent / 2.5, 0, 1), 0.89, 0.75)
 		}):Play()
 	end
