@@ -7791,7 +7791,7 @@ run(function()
 						UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
 							if obj.Name == 'hotbar' then
 								for i,v in obj['1'].ItemsHotbar:GetChildren() do
-									v:FindFirstChildOfClass('TextLabel').Visible = NoHotbar.Enabled
+									v['1']:FindFirstChildOfClass('TextLabel').Visible = NoHotbar.Enabled
 								end
 							end
 						end))
@@ -7808,7 +7808,7 @@ run(function()
 					lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = true
 	
 					for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
-						v:FindFirstChildOfClass('TextLabel').Visible = true
+						v['1']:FindFirstChildOfClass('TextLabel').Visible = true
 					end
 	
 					lplr.PlayerGui.KillFeedGui.Enabled = true
