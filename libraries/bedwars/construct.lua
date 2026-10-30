@@ -4082,6 +4082,16 @@ local function playBreakSwing()
 	end)
 end
 
+-- the health the last hit left the block at, and which block that was. the real
+-- breakBlock reads it back to work out the damage it must report to the healthbar
+local brokenHealth = { blockHealth = -1, breakingBlockPosition = Vector3.zero }
+
+local function getBlockHealth(block, blockpos)
+	local blockdata = bedwars.BlockController:getStore():getBlockData(blockpos)
+	local health = blockdata and (blockdata:GetAttribute("1") or blockdata:GetAttribute("Health"))
+	return health or block:GetAttribute("Health") or 0
+end
+
 bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 	if lplr:GetAttribute("DenyBlockBreak") or not entitylib.isAlive or InfiniteFly.Enabled then
 		return
@@ -4133,6 +4143,11 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 			end
 		end
 
+		if brokenHealth.blockHealth == -1 or dpos ~= brokenHealth.breakingBlockPosition then
+			brokenHealth.blockHealth = getBlockHealth(dblock, dpos)
+			brokenHealth.breakingBlockPosition = dpos
+		end
+
 		local damageBlockRemote = bedwars.ClientDamageBlock:Get("DamageBlock")
 		damageBlockRemote:CallServerAsync({ blockRef = { blockPosition = dpos }, hitPosition = pos, hitNormal = Vector3.FromNormalId(Enum.NormalId.Top) }):andThen(function(result)
 			if not result then
@@ -4149,15 +4164,24 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 			end
 
 			if effects then
+				-- health before the hit, and the amount this hit took off: a block that is
+				-- gone reports its whole remaining health as the damage
+				local blockdmg = brokenHealth.blockHealth
+					- (result == "destroyed" and 0 or getBlockHealth(dblock, dpos))
 				customHealthbar = customHealthbar or bedwars.BlockBreaker.updateHealthbar
 				customHealthbar(
 					bedwars.BlockBreaker,
 					{ blockPosition = dpos },
-					0,
+					brokenHealth.blockHealth,
 					dblock:GetAttribute("MaxHealth"),
-					dblock:GetAttribute("Health"),
+					blockdmg,
 					dblock
 				)
+				brokenHealth.blockHealth = math.max(brokenHealth.blockHealth - blockdmg, 0)
+
+				if brokenHealth.blockHealth <= 0 then
+					brokenHealth.breakingBlockPosition = Vector3.zero
+				end
 			end
 
 			if anim then
