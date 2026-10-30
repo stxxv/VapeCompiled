@@ -5036,7 +5036,7 @@ run(function()
 	local function customHealthbar(self, blockRef, health, maxHealth, changeHealth, block)
 		if block:GetAttribute('NoHealthbar') then return end
 		if not self.healthbarPart or not self.healthbarBlockRef or self.healthbarBlockRef.blockPosition ~= blockRef.blockPosition then
-			self.healthbarMaid:DoCleaning()
+			self.maid:DoCleaning()
 			self.healthbarBlockRef = blockRef
 			local create = bedwars.Roact.createElement
 			local percent = math.clamp(health / maxHealth, 0, 1)
@@ -5110,7 +5110,7 @@ run(function()
 				})
 			}), part)
 	
-			self.healthbarMaid:GiveTask(function()
+			self.maid:GiveTask(function()
 				cleanCheck = false
 				self.healthbarBlockRef = nil
 				bedwars.Roact.unmount(mounted)
@@ -5122,7 +5122,7 @@ run(function()
 	
 			bedwars.RuntimeLib.Promise.delay(5):andThen(function()
 				if cleanCheck then
-					self.healthbarMaid:DoCleaning()
+					self.maid:DoCleaning()
 				end
 			end)
 		end
