@@ -2089,7 +2089,7 @@ bedwars.BlockBreaker = {
 			}
 		end,
 	},
-	healthbarMaid = newMaid(),
+	maid = newMaid(),
 	healthbarProgressRef = bedwars.Roact.createRef(),
 	healthbarPart = nil,
 	healthbarBlockRef = nil,
