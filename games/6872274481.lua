@@ -7024,13 +7024,23 @@ run(function()
 		tab = suc and tab or {}
 		local oldvalues, oldfont = {}
 	
+		local function setDamageFont(font) -- the fact that I have to add this because some executors handle this differently is insane
+			local value = typeof(font) == 'EnumItem' and font.Name or font
+			local ok, current = pcall(debug.getconstant, bedwars.DamageIndicator, 67)
+			if ok and typeof(current) == 'EnumItem' then
+				debug.setconstant(bedwars.DamageIndicator, 67, Enum.Font[value])
+			else
+				debug.setconstant(bedwars.DamageIndicator, 67, value)
+			end
+		end
+	
 		DamageIndicator = vape.Legit:CreateModule({
 			Name = 'Damage Indicator',
 			Function = function(callback)
 				if callback then
 					oldvalues = table.clone(tab)
 					oldfont = debug.getconstant(bedwars.DamageIndicator, 67)
-					debug.setconstant(bedwars.DamageIndicator, 67, Enum.Font[FontOption.Value])
+					setDamageFont(Enum.Font[FontOption.Value])
 					tab.strokeThickness = Stroke.Enabled and 1.5 or 0
 					tab.textSize = Size.Value
 					tab.blowUpSize = Size.Value
@@ -7042,7 +7052,7 @@ run(function()
 					for i, v in oldvalues do
 						tab[i] = v
 					end
-					debug.setconstant(bedwars.DamageIndicator, 67, oldfont)
+					setDamageFont(oldfont)
 				end
 			end,
 			Tooltip = 'Customize the damage indicator'
@@ -7058,7 +7068,7 @@ run(function()
 			List = fontitems,
 			Function = function(val)
 				if DamageIndicator.Enabled then
-					debug.setconstant(bedwars.DamageIndicator, 67, Enum.Font[val])
+					setDamageFont(Enum.Font[val])
 				end
 			end
 		})
@@ -7923,7 +7933,7 @@ run(function()
 				if UICleanup.Enabled then
 					lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = not callback
 				end
-				
+	
 				return
 			end
 	
