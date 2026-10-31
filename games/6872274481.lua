@@ -2212,7 +2212,7 @@ run(function()
 	
 			if bedwars.AbilityController:canUseAbility(hammer..'_jump') and LongJump.Enabled then
 				switchItem(item.tool, 0)
-				lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				entitylib.character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 				start = pos + Vector3.new(0, 3.1, 0)
 	
 				task.wait(.1)
@@ -2358,7 +2358,7 @@ run(function()
 						oldVelo = root.AssemblyLinearVelocity.Y
 						if root.AssemblyLinearVelocity.Y < -45 then
 							root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, 44, root.AssemblyLinearVelocity.Z)
-							lplr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+							entitylib.character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
 	
 							runService.PreSimulation:Wait()
 							root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, oldVelo, root.AssemblyLinearVelocity.Z)
@@ -7793,7 +7793,9 @@ run(function()
 						UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
 							if obj.Name == 'hotbar' then
 								for i,v in obj['1'].ItemsHotbar:GetChildren() do
-									v['1']['1'].Visible = NoHotbar.Enabled
+									if v:IsA('Frame') then
+										v['1']['1'].Visible = NoHotbar.Enabled
+									end
 								end
 							end
 						end))
