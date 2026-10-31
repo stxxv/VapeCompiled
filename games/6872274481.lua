@@ -7906,9 +7906,11 @@ run(function()
 	NoHotbar = UICleanup:CreateToggle({
 		Name = 'No Hotbar Numbers',
 		Function = function(callback)
-			for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
-				if v:IsA('Frame') then
-					v['1']['1'].Visible = not callback
+			if UICleanup.Enabled then
+				for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
+					if v:IsA('Frame') then
+						v['1']['1'].Visible = not callback
+					end
 				end
 			end
 		end,
@@ -7918,7 +7920,10 @@ run(function()
 		Name = 'No Inventory Button',
 		Function = function(callback)
 			if ce then
-				lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = not callback
+				if UICleanup.Enabled then
+					lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = not callback
+				end
+				
 				return
 			end
 	
