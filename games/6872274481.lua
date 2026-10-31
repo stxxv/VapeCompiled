@@ -172,7 +172,20 @@ end
 getgenv().getItem = getItem	
 
 local function getRoactRender(func)
-	return (debug.getupvalue and debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)) or nil
+	-- the roact-hooks wrapper used to bury the hooks render three component tables deep;
+	-- its render method now carries the closure as upvalue 1, so try the old drill first
+	-- and fall through to the direct upvalue
+	local ok, inner = pcall(function()
+		return debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)
+	end)
+	if ok and type(inner) == 'function' then
+		return inner
+	end
+	local okDirect, hooksRender = pcall(debug.getupvalue, func, 1)
+	if okDirect and type(hooksRender) == 'function' then
+		return hooksRender
+	end
+	return nil
 end
 
 local function getSword()
@@ -816,10 +829,10 @@ run(function()
 				if not bedwars.AppController:isLayerOpen(bedwars.UILayers.MAIN) then
 					local blockPlacer = bedwars.BlockPlacementController.blockPlacer
 					if store.hand.toolType == 'block' and blockPlacer then
-						if (workspace:GetServerTimeNow() - bedwars.BlockCpsController.lastPlaceTimestamp) >= ((1 / 12) * 0.5) then
+						if (workspace:GetServerTimeNow() - bedwars.BlockCpsController.lastPlaceTimestamp) >= (1 / 12) then
 							local mouseinfo = blockPlacer.clientManager:getBlockSelector():getMouseInfo(0)
 							if mouseinfo and mouseinfo.placementPosition == mouseinfo.placementPosition then
-								task.spawn(blockPlacer.placeBlock, blockPlacer, mouseinfo.placementPosition)
+								task.spawn(blockPlacer.placeBlock, blockPlacer, mouseinfo.placementPosition, mouseinfo)
 							end
 						end
 					elseif store.hand.toolType == 'sword' then
@@ -7016,10 +7029,9 @@ run(function()
 			Function = function(callback)
 				if callback then
 					oldvalues = table.clone(tab)
-					oldfont = debug.getconstant(bedwars.DamageIndicator, 86)
-					debug.setconstant(bedwars.DamageIndicator, 86, Enum.Font[FontOption.Value])
-					debug.setconstant(bedwars.DamageIndicator, 119, Stroke.Enabled and 'Thickness' or 'Enabled')
-					tab.strokeThickness = Stroke.Enabled and 1 or false
+					oldfont = debug.getconstant(bedwars.DamageIndicator, 67)
+					debug.setconstant(bedwars.DamageIndicator, 67, Enum.Font[FontOption.Value])
+					tab.strokeThickness = Stroke.Enabled and 1.5 or 0
 					tab.textSize = Size.Value
 					tab.blowUpSize = Size.Value
 					tab.blowUpDuration = 0
@@ -7030,8 +7042,7 @@ run(function()
 					for i, v in oldvalues do
 						tab[i] = v
 					end
-					debug.setconstant(bedwars.DamageIndicator, 86, oldfont)
-					debug.setconstant(bedwars.DamageIndicator, 119, 'Thickness')
+					debug.setconstant(bedwars.DamageIndicator, 67, oldfont)
 				end
 			end,
 			Tooltip = 'Customize the damage indicator'
@@ -7047,7 +7058,7 @@ run(function()
 			List = fontitems,
 			Function = function(val)
 				if DamageIndicator.Enabled then
-					debug.setconstant(bedwars.DamageIndicator, 86, Enum.Font[val])
+					debug.setconstant(bedwars.DamageIndicator, 67, Enum.Font[val])
 				end
 			end
 		})
@@ -7087,8 +7098,7 @@ run(function()
 			Name = 'Stroke',
 			Function = function(callback)
 				if DamageIndicator.Enabled then
-					debug.setconstant(bedwars.DamageIndicator, 119, callback and 'Thickness' or 'Enabled')
-					tab.strokeThickness = callback and 1 or false
+					tab.strokeThickness = callback and 1.5 or 0
 				end
 			end
 		})
@@ -7320,7 +7330,7 @@ run(function()
 			Name = 'Health Font',
 			List = fontitems,
 			Function = function(val)
-				modifyconstant(HotbarHealthbar.render, 77, val)
+				modifyconstant(HotbarHealthbar.render, 63, val)
 			end
 		})
 		Interface:CreateColorSlider({
@@ -7341,13 +7351,13 @@ run(function()
 			DefaultOpacity = 0.8,
 			Function = function(hue, sat, val, opacity)
 				local func = oldinvrender or (HotbarOpenInventory and HotbarOpenInventory.render)
-				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 51, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
-				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 58, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
-				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 54, 1 - opacity)
-				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 55, math.clamp(1.2 - opacity, 0, 1))
-				modifyconstant(func, 31, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
-				modifyconstant(func, 32, math.clamp(1.2 - opacity, 0, 1))
-				modifyconstant(func, 34, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 71, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 78, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 74, 1 - opacity)
+				modifyconstant(debug.getupvalue(HotbarApp, 23).render, 75, math.clamp(1.2 - opacity, 0, 1))
+				modifyconstant(func, 35, tonumber(Color3.fromHSV(hue, sat, val):ToHex(), 16))
+				modifyconstant(func, 25, math.clamp(1.2 - opacity, 0, 1))
+				modifyconstant(func, 36, tonumber(Color3.fromHSV(hue, sat, math.clamp(val > 0.5 and val - 0.2 or val + 0.2, 0, 1)):ToHex(), 16))
 			end
 		})
 	end
@@ -7843,6 +7853,24 @@ run(function()
 					bedwars.KillFeedController.addToKillFeed = function() end
 				end
 	
+				if NoHotbar.Enabled then
+					for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
+						if v:IsA('Frame') then
+							v['1']['1'].Visible = false
+						end
+					end
+	
+					UICleanup:Clean(lplr.PlayerGui.ChildAdded:Connect(function(obj)
+						if obj.Name == 'hotbar' then
+							for i,v in obj['1'].ItemsHotbar:GetChildren() do
+								if v:IsA('Frame') then
+									v['1']['1'].Visible = NoHotbar.Enabled
+								end
+							end
+						end
+					end))
+				end
+	
 				if OldTabList.Enabled then
 					starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
 				end
@@ -7868,8 +7896,8 @@ run(function()
 		UICleanup:CreateToggle({
 			Name = 'Resize Health',
 			Function = function(callback)
-				modifyconstant(HotbarApp, 60, callback and 1 or nil)
-				modifyconstant(debug.getupvalue(HotbarApp, 15).render, 30, callback and 1 or nil)
+				modifyconstant(HotbarApp, 63, callback and 1 or nil)
+				modifyconstant(debug.getupvalue(HotbarApp, 15).render, 31, callback and 1 or nil)
 				modifyconstant(debug.getupvalue(HotbarApp, 23).tweenPosition, 16, callback and 0 or nil)
 			end,
 			Default = true
@@ -7878,15 +7906,11 @@ run(function()
 	NoHotbar = UICleanup:CreateToggle({
 		Name = 'No Hotbar Numbers',
 		Function = function(callback)
-			if ce then
-				UICleanup:Toggle()
-				UICleanup:Toggle()
-				return
+			for i,v in lplr.PlayerGui.hotbar['1'].ItemsHotbar:GetChildren() do
+				if v:IsA('Frame') then
+					v['1']['1'].Visible = not callback
+				end
 			end
-	
-			local func = oldinvrender or (HotbarOpenInventory and HotbarOpenInventory.render)
-			modifyconstant(debug.getupvalue(HotbarApp, 23).render, 90, callback and 0 or nil)
-			modifyconstant(func, 71, callback and 0 or nil)
 		end,
 		Default = true
 	})
@@ -7894,12 +7918,10 @@ run(function()
 		Name = 'No Inventory Button',
 		Function = function(callback)
 			if ce then
-				UICleanup:Toggle()
-				UICleanup:Toggle()
+				lplr.PlayerGui.hotbar['1'].ItemsHotbar['10'].Visible = not callback
 				return
 			end
 	
-			modifyconstant(HotbarApp, 78, callback and 0 or nil)
 			if UICleanup.Enabled and HotbarOpenInventory then
 				if callback then
 					oldinvrender = HotbarOpenInventory.render
@@ -7919,7 +7941,7 @@ run(function()
 		Function = function(callback)
 			if UICleanup.Enabled then
 				if ce then
-					lplr.PlayerGui.KillFeedGui.Enabled = callback
+					lplr.PlayerGui.KillFeedGui.Enabled = not callback
 					return
 				end
 	

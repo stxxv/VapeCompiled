@@ -790,7 +790,21 @@ local function newMaid()
 		end,
 		DoCleaning = function()
 			for _, v in tasks do
-				task.spawn(v)
+				-- the real Maid runs functions, disconnects connections and destroys
+				-- instances. spawning a connection throws, which used to unwind this loop
+				-- before table.clear and grow the task list by two entries per healthbar
+				-- mount, forever
+				if typeof(v) == "function" then
+					task.spawn(v)
+				elseif typeof(v) == "RBXScriptConnection" then
+					pcall(function()
+						v:Disconnect()
+					end)
+				else
+					pcall(function()
+						v:Destroy()
+					end)
+				end
 			end
 			table.clear(tasks)
 		end,
@@ -1866,6 +1880,53 @@ bedwars.BlockController = {
 			return false
 		end
 
+		-- the body-column check the real gate runs: a cell in your own column is rejected
+		-- unless there is air above your head, which is what allows the jump-place. without
+		-- it the old downward answer - the cell your legs occupy - sailed through and every
+		-- sky-stare click sent a placement into yourself
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoid then
+			return false
+		end
+		local pivot = character:GetPivot().Position
+		if not pivot then
+			return false
+		end
+
+		local feetCell = getKey(roundBlockPos(pivot - Vector3.new(0, humanoid.HipHeight / 2, 0)))
+		local heightScale = humanoid:GetAttribute("BodyHeightScaleOverride")
+		if typeof(heightScale) ~= "number" then
+			local value = humanoid:FindFirstChild("BodyHeightScale")
+			heightScale = value and value.Value or 1
+		end
+		local bodyBlocks = math.round(heightScale * 2)
+		if bodyBlocks > 1 and cell.X == feetCell.X and cell.Z == feetCell.Z then
+			local above = findBlock(feetCell + Vector3.new(0, bodyBlocks, 0))
+			local bottom = feetCell.Y + (above and 0 or 1)
+			if bottom <= cell.Y and cell.Y <= feetCell.Y + bodyBlocks - 1 then
+				return false
+			end
+		end
+
+		-- the same column check for every other player: the server rejects a placement
+		-- inside them, so do not send it either
+		for _, other in playersService:GetPlayers() do
+			if other ~= plr and other.Character then
+				local otherHumanoid = other.Character:FindFirstChildOfClass("Humanoid")
+				local otherPivot = otherHumanoid and other.Character:GetPivot().Position
+				if otherHumanoid and otherPivot then
+					local otherFeet = getKey(roundBlockPos(otherPivot - Vector3.new(0, otherHumanoid.HipHeight / 2, 0)))
+					local depthValue = otherHumanoid:FindFirstChild("BodyDepthScale")
+					local otherBlocks = math.round((depthValue and depthValue.Value or 1) * 2)
+					for step = 0, otherBlocks - 1 do
+						if cell == otherFeet + Vector3.new(0, step, 0) then
+							return false
+						end
+					end
+				end
+			end
+		end
+
 		return true
 	end,
 	calculateBlockDamage = function(_, plr, breakTable)
@@ -2039,9 +2100,12 @@ local function getMouseInfo(_, mode, params)
 		local block = bedwars.BlockController:getBlockInstanceFromChild(result.Instance)
 		local handler = block and bedwars.BlockController:getHandlerRegistry():getHandler(block.Name)
 		local meta = handler and handler:getBlockMeta()
-		-- a hit that is not a block, or one you may not build on, falls through to the
-		-- downward search below exactly like the real selector instead of giving up
-		if block and not (place and meta and meta.denyPlaceOn) then
+		-- the real selector gives up entirely on a denyPlaceOn block in place mode: no
+		-- downward search, nothing is sent
+		if block and place and meta and meta.denyPlaceOn then
+			return nil
+		end
+		if block then
 			-- hitPosition stays world and sits on the face, so the cell is taken after
 			-- pulling the point inside the block by its normal
 			local hitPoint = result.Position - result.Normal * 0.1
@@ -2070,15 +2134,97 @@ local function getMouseInfo(_, mode, params)
 		return nil
 	end
 
-	-- nothing under the crosshair: the game looks straight down for a block to build
-	-- off, which is what makes placing while staring at the sky work
+	-- nothing under the crosshair. the real selector looks for a block below you, drops a
+	-- 30x1x30-block invisible plane over it and casts the same camera ray at that plane,
+	-- then walks from the floor cell toward the hit point to the first air cell. a
+	-- sky-stare camera ray never crosses the plane, so it answers nil and nothing is
+	-- placed. the old fallback answered the cell above the floor block - the one your
+	-- body occupies - and the gate's missing column check let it through, which is where
+	-- the PlaceBlock-into-yourself placements came from
 	local worldNormal = workspace:GetAttribute("WorldNormal") or Vector3.new(0, 1, 0)
+	local floorCell
 	for step = 1, 3 do
 		local cell = roundBlockPos(root.Position - worldNormal * BLOCK_STUDS * step)
 		if findBlock(cell) then
-			return { placementPosition = cell + worldNormal }
+			floorCell = cell
+			break
 		end
 	end
+
+	if not floorCell then
+		-- allowVoidSave: hanging over the void, place against any horizontal neighbour
+		if params and params.allowVoidSave then
+			for step = 1, 3 do
+				local cell = roundBlockPos(root.Position - worldNormal * BLOCK_STUDS * step)
+				for _, neighbour in {
+					Vector3.new(1, 0, 0), Vector3.new(-1, 0, 0),
+					Vector3.new(0, 0, 1), Vector3.new(0, 0, -1),
+					Vector3.new(1, 0, 1), Vector3.new(-1, 0, -1),
+					Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1),
+				} do
+					if findBlock(cell + neighbour) then
+						return { placementPosition = cell }
+					end
+				end
+			end
+		end
+		return nil
+	end
+
+	local plane = Instance.new("Part")
+	plane.Size = Vector3.new(30, 1, 30) * BLOCK_STUDS
+	plane.CFrame = CFrame.new(floorCell * BLOCK_STUDS) * CFrame.Angles(worldNormal.Z, 0, worldNormal.X)
+	plane.Anchored = true
+	plane.Transparency = 1
+	plane.CanCollide = false
+	plane.Parent = workspace
+
+	local planeParams = RaycastParams.new()
+	planeParams.FilterType = Enum.RaycastFilterType.Blacklist
+	local planeFilter = {}
+	for _, plr in playersService:GetPlayers() do
+		if plr.Character then
+			table.insert(planeFilter, plr.Character)
+		end
+	end
+	planeParams.FilterDescendantsInstances = planeFilter
+
+	local function castPlane()
+		return workspace:Raycast(origin, direction * (range * 3.5), planeParams)
+	end
+
+	local hit = castPlane()
+	while hit and hit.Instance ~= plane and (
+		collectionService:HasTag(hit.Instance, "block:no-collision")
+		or bedwars.QueryUtil:isQueryIgnored(hit.Instance)
+		or hit.Instance:GetAttribute("BlockEngine_Select_IgnorePlaceMode")
+	) do
+		local filter = table.clone(planeParams.FilterDescendantsInstances)
+		table.insert(filter, hit.Instance)
+		planeParams.FilterDescendantsInstances = filter
+		hit = castPlane()
+	end
+	plane:Destroy()
+
+	if hit and hit.Instance == plane then
+		local hitCell = roundBlockPos(hit.Position - worldNormal * (BLOCK_STUDS / 2))
+		local walked = floorCell
+		for _ = 1, 20 do
+			local delta = hitCell - walked
+			if delta.Magnitude ~= 0 and delta.Magnitude == delta.Magnitude then
+				walked += delta.Unit / 2
+			end
+			if not findBlock(getKey(walked)) then
+				break
+			end
+		end
+		local cell = getKey(walked)
+		if not findBlock(cell) then
+			return { placementPosition = cell }
+		end
+	end
+
+	return nil
 end
 
 bedwars.BlockBreaker = {
@@ -2090,6 +2236,7 @@ bedwars.BlockBreaker = {
 		end,
 	},
 	maid = newMaid(),
+	healthbarMaid = newMaid(),
 	healthbarProgressRef = bedwars.Roact.createRef(),
 	healthbarPart = nil,
 	healthbarBlockRef = nil,
@@ -2099,7 +2246,147 @@ bedwars.BlockBreaker = {
 	},
 	setCooldown = function() end,
 	hitBlock = function() end,
-	updateHealthbar = function() end,
+	-- the real BlockBreakerController delegates its healthbar to the engine's
+	-- BlockHealthbar (block-engine out/client/break/block-healthbar): a black bar with a
+	-- green fill floating over the block, tweened per hit and corrected live against the
+	-- damage the server writes into the block's data attribute. the server never sends
+	-- BlockHealthbarUpdate for a DamageBlock the client predicted (verified with an
+	-- inbound spy), so on the ce path this has to be drawn by hand - Breaker falls back
+	-- to it whenever its Custom Healthbar toggle is off
+	cooldown = 0.3,
+	cleanupDelay = 5,
+	cleanupRunId = 0,
+	blockPosition = nil,
+	isShowing = function(self, blockPosition)
+		return self.blockPosition ~= nil and self.blockPosition == blockPosition
+	end,
+	getHealthKey = function(_, block)
+		local key = '1'
+		if block then
+			local handler = bedwars.BlockController:getHandlerRegistry():getHandler(block.Name)
+			local meta = handler and handler:getBlockMeta()
+			local healthType = meta and meta.healthType
+			-- BlockHealthType.GLOBAL reads the shared Health attribute, PERSONAL a
+			-- per-player one; every other block uses the engine's default key
+			if healthType == 'GLOBAL' or healthType == 0 then
+				key = 'Health'
+			elseif healthType == 'PERSONAL' or healthType == 1 then
+				key = lplr.Name .. '_Health'
+			end
+		end
+		return key
+	end,
+	getHealthRatio = function(_, health, maxHealth)
+		return math.clamp(health / maxHealth, 0, 1)
+	end,
+	tweenHealthbar = function(self, newHealth, maxHealth)
+		local progress = self.healthbarProgressRef:getValue()
+		if not progress then
+			return
+		end
+		tweenService:Create(progress, TweenInfo.new(self.cooldown, Enum.EasingStyle.Quad), {
+			Size = UDim2.fromScale(self:getHealthRatio(newHealth, maxHealth), 1)
+		}):Play()
+	end,
+	scheduleHealthbarCleanup = function(self)
+		self.cleanupRunId += 1
+		local runId = self.cleanupRunId
+		task.delay(self.cleanupDelay, function()
+			if runId == self.cleanupRunId then
+				self.healthbarMaid:DoCleaning()
+			end
+		end)
+	end,
+	mountHealthbar = function(self, blockPosition, preHitHealth, maxHealth, block)
+		self.healthbarMaid:DoCleaning()
+		self.blockPosition = blockPosition
+		local part = Instance.new('Part')
+		part.Name = 'VapeBlockHealthbar'
+		part.Size = Vector3.one
+		part.Transparency = 1
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CFrame = CFrame.new(bedwars.BlockController:getWorldPosition(blockPosition))
+		-- the real one parents its part to the block itself, so the bar dies with it
+		part.Parent = block or workspace
+		self.healthbarPart = part
+		bedwars.QueryUtil:setQueryIgnored(part, true)
+
+		local create = bedwars.Roact.createElement
+		local mounted = bedwars.Roact.mount(create('BillboardGui', {
+			StudsOffset = Vector3.new(0, 2.5, 0),
+			MaxDistance = 40,
+			AlwaysOnTop = true,
+			Adornee = part,
+			Size = UDim2.fromScale(4, 0.2),
+		}, {
+			create('Frame', {
+				BackgroundTransparency = 0.3,
+				BorderSizePixel = 0,
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			}, {
+				create('Frame', {
+					[bedwars.Roact.Ref] = self.healthbarProgressRef,
+					Size = UDim2.fromScale(self:getHealthRatio(preHitHealth, maxHealth), 1),
+					BackgroundColor3 = Color3.fromRGB(39, 231, 68),
+					BorderSizePixel = 0,
+				})
+			})
+		}), part)
+
+		local mountedAt = blockPosition
+		self.healthbarMaid:GiveTask(function()
+			if self.blockPosition == mountedAt then
+				self.blockPosition = nil
+			end
+			bedwars.Roact.unmount(mounted)
+			part:Destroy()
+			if self.healthbarPart == part then
+				self.healthbarPart = nil
+			end
+		end)
+
+		-- the real bar watches the block's data attribute and tweens itself whenever the
+		-- server writes new damage there; the emulated store exposes the same entries
+		local key = self:getHealthKey(block)
+		local blockdata = key and bedwars.BlockController:getStore():getBlockData(blockPosition)
+		if blockdata then
+			self.healthbarMaid:GiveTask(blockdata.AttributeChanged:Connect(function(attribute)
+				if attribute ~= key then
+					return
+				end
+				local value = blockdata:GetAttribute(key)
+				if value then
+					self:tweenHealthbar(value, maxHealth)
+				end
+			end))
+		end
+	end,
+	updateHealthbar = function(self, blockRef, health, maxHealth, changeHealth, block)
+		if block and block:GetAttribute('NoHealthbar') == true then
+			return
+		end
+		if not maxHealth or maxHealth <= 0 then
+			return
+		end
+
+		-- the game's own bar wins: your manual breaks predict locally and the real
+		-- BlockHealthbar mounts a 'BlockHealthbar' part onto the block, so when one is
+		-- already showing there, drop mine instead of stacking a second bar on top
+		if block and block:FindFirstChild('BlockHealthbar') then
+			self.healthbarMaid:DoCleaning()
+			return
+		end
+
+		if not self.healthbarPart or not self:isShowing(blockRef.blockPosition) then
+			self:mountHealthbar(blockRef.blockPosition, health, maxHealth, block)
+		end
+
+		self:tweenHealthbar(health - changeHealth, maxHealth)
+		self:scheduleHealthbarCleanup()
+	end,
 }
 
 --[[
@@ -3069,7 +3356,7 @@ bedwars.SwordController = {
 		params.FilterType = Enum.RaycastFilterType.Exclude
 
 		local function clear(from, to)
-			local result = workspace:Raycast(from, to - from, params)
+			local result = bedwars.QueryUtil:raycast(from, to - from, params)
 			if not result then
 				return true
 			end
@@ -3320,7 +3607,10 @@ bedwars.SwordController = {
 			return
 		end
 		local direction = mouse.UnitRay.Direction
-		local result = workspace:Raycast(mouse.UnitRay.Origin, direction * 200, params)
+		-- the real controller casts through GameQueryUtil, which steps over its own
+		-- query-ignored visuals (break effects, healthbar adornments) - a plain raycast
+		-- hits them and eats the swing. this is what HitFix patches in on full executors
+		local result = bedwars.QueryUtil:raycast(mouse.UnitRay.Origin, direction * 200, params)
 		local target = result and self:getEntityFromInstance(result.Instance)
 		local options = type(chargeTime) == "number" and chargeTime > 0 and { chargeTime = chargeTime } or nil
 		if
@@ -3705,6 +3995,13 @@ bedwars.BlockPlacer = {
 			if typeof(pos) ~= "Vector3" then
 				return
 			end
+			-- a caller's answer is only used when it actually places pos: a stale one
+			-- would build against the face the mouse has moved off. the selector's
+			-- downward search has no target and that is fine - the real placer sends it
+			-- with target = nil and the server reads it nil-safely
+			if mouseInfo and mouseInfo.placementPosition ~= pos then
+				mouseInfo = nil
+			end
 			if not mouseInfo then
 				-- this is the mouseBlockInfo the real click path hands to placeBlock: the
 				-- block the player has highlighted. used only when it is the cell being
@@ -3993,17 +4290,20 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 	if not mouseInfo then
 		mouseInfo = buildMouseBlockInfo(blockpos)
 	end
-	if not mouseInfo or not mouseInfo.target then
+	if not mouseInfo then
 		return
 	end
 	-- rebuilt field by field like the real placer, which is what keeps blockInstance and
-	-- anything else the selector carries out of a remote that typechecks its argument
+	-- anything else the selector carries out of a remote that typechecks its argument.
+	-- the real placer sends the selector's target-less downward answer as target = nil
+	-- and the server's isServerAllowedPlacement reads it nil-safely, so that shape is
+	-- allowed through
 	mouseInfo = {
-		target = {
+		target = mouseInfo.target and {
 			blockRef = { blockPosition = mouseInfo.target.blockRef.blockPosition },
 			hitPosition = mouseInfo.target.hitPosition,
 			hitNormal = mouseInfo.target.hitNormal,
-		},
+		} or nil,
 		placementPosition = mouseInfo.placementPosition or blockpos,
 	}
 
@@ -4181,6 +4481,12 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 
 				if brokenHealth.blockHealth <= 0 then
 					brokenHealth.breakingBlockPosition = Vector3.zero
+					-- the block is gone, so the healthbar goes the same frame the real
+					-- controller drops it instead of lingering for its expiry. both maids:
+					-- the default bar lives on healthbarMaid, the Custom Healthbar the
+					-- module renders lives on maid
+					bedwars.BlockBreaker.healthbarMaid:DoCleaning()
+					bedwars.BlockBreaker.maid:DoCleaning()
 				end
 			end
 
