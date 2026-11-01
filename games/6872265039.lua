@@ -1,6 +1,3 @@
-local run = function(func)
-	func()
-end
 local cloneref = cloneref or function(obj)
 	return obj
 end
@@ -13,56 +10,59 @@ local lplr = playersService.LocalPlayer
 local vape = shared.vape
 local entitylib = vape.Libraries.entity
 local sessioninfo = vape.Libraries.sessioninfo
-local bedwars = {}
+getgenv().bedwars = {}
 
 local function notif(...)
 	return vape:CreateNotification(...)
 end
 
-run(function()
-	local function dumpRemote(tab)
-		local ind = table.find(tab, 'Client')
-		return ind and tab[ind + 1] or ''
+local function run(func)
+	local suc, res = pcall(func)
+
+	if not suc then
+		notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
+		return
 	end
 
-	local KnitInit, Knit
-	repeat
-		KnitInit, Knit = pcall(function() return debug.getupvalue(require(lplr.PlayerScripts.TS.knit).setup, 9) end)
-		if KnitInit then break end
-		task.wait()
-	until KnitInit
-	if not debug.getupvalue(Knit.Start, 1) then
-		repeat task.wait() until debug.getupvalue(Knit.Start, 1)
-	end
-	local Flamework = require(replicatedStorage['rbxts_include']['node_modules']['@flamework'].core.out).Flamework
-	local Client = require(replicatedStorage.TS.remotes).default.Client
+	return res
+end
 
-	bedwars = setmetatable({
-		Client = Client,
-		CrateItemMeta = debug.getupvalue(Flamework.resolveDependency('client/controllers/global/reward-crate/crate-controller@CrateController').onStart, 3),
-		Store = require(lplr.PlayerScripts.TS.ui.store).ClientStore
-	}, {
-		__index = function(self, ind)
-			rawset(self, ind, Knit.Controllers[ind])
-			return rawget(self, ind)
+local function downloadFile(path, callback)
+	if not isfile(path) then
+		local success, data = pcall(function()
+			return game:HttpGet('https://raw.githubusercontent.com/stxxv/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+		end)
+		if not success or data == '404: Not Found' then
+			error(data)
 		end
-	})
+		if path:find('.lua') then
+			data = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..data
+		end
+		writefile(path, data)
+	end
+	return (callback or readfile)(path)
+end
+getgenv().downloadFile = downloadFile
 
-	local kills = sessioninfo:AddItem('Kills')
-	local beds = sessioninfo:AddItem('Beds')
-	local wins = sessioninfo:AddItem('Wins')
-	local games = sessioninfo:AddItem('Games')
+run(function()
+	for _, v in {'newvape/libraries/bedwars', 'newvape/libraries/bedwars/lobby'} do
+		if not isfolder(v) then
+			makefolder(v)
+		end
+	end
 
-	vape:Clean(function()
-		table.clear(bedwars)
-	end)
+	local construct = loadstring(downloadFile('newvape/libraries/bedwars/lobby/construct.lua'))()
+	repeat task.wait() until construct ~= nil and construct.loaded
 end)
 
-for _, v in vape.Modules do
+entitylib.start()
+
+for i, v in vape.Modules do
 	if v.Category == 'Combat' then
 		vape:Remove(i)
 	end
 end
+
 
 run(function()
 	local Sprint

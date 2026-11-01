@@ -172,20 +172,7 @@ end
 getgenv().getItem = getItem	
 
 local function getRoactRender(func)
-	-- the roact-hooks wrapper used to bury the hooks render three component tables deep;
-	-- its render method now carries the closure as upvalue 1, so try the old drill first
-	-- and fall through to the direct upvalue
-	local ok, inner = pcall(function()
-		return debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1)
-	end)
-	if ok and type(inner) == 'function' then
-		return inner
-	end
-	local okDirect, hooksRender = pcall(debug.getupvalue, func, 1)
-	if okDirect and type(hooksRender) == 'function' then
-		return hooksRender
-	end
-	return nil
+	return debug.getupvalue(debug.getupvalue(debug.getupvalue(func, 3).render, 2).render, 1) -- i just realized what happened.. ai shouldn't be touching base.lua, mb guys
 end
 
 local function getSword()
@@ -716,11 +703,13 @@ end)
 entitylib.start()
 
 run(function()
-	if not isfolder('newvape/libraries/bedwars') then
-		makefolder('newvape/libraries/bedwars')
+	for _, v in {'newvape/libraries/bedwars', 'newvape/libraries/bedwars/game'} do
+		if not isfolder(v) then
+			makefolder(v)
+		end
 	end
 
-	local construct = loadstring(downloadFile('newvape/libraries/bedwars/construct.lua'))()
+	local construct = loadstring(downloadFile('newvape/libraries/bedwars/game/construct.lua'))()
 	repeat task.wait() until construct ~= nil and construct.loaded
 end)
 

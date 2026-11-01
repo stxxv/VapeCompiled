@@ -56,6 +56,8 @@ if not shared.VapeDeveloper then
 		wipeFolder('newvape/guis')
 		wipeFolder('newvape/libraries')
 		wipeFolder('newvape/libraries/bedwars')
+		wipeFolder('newvape/libraries/bedwars/game')
+		wipeFolder('newvape/libraries/bedwars/lobby')
 	end
 
 	if (isfile('newvape/profiles/asset.txt') and readfile('newvape/profiles/asset.txt') or '') ~= assetVer then

@@ -1,0 +1,994 @@
+{
+    "CrateItemMeta": {
+        "afk_crate": {
+            "consumableRequirement": "afk_crate",
+            "displayName": "AFK Crate",
+            "image": "rbxassetid://115314817400756",
+            "items": [
+                {
+                    "amount": 1,
+                    "itemType": "flat_bp_xp_1",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "flat_bp_xp_2",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "flat_bp_xp_3",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "battle_pass_2x",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "level_up_crate",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "diamond_lucky_crate",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "random_kit",
+                    "rarity": 5
+                }
+            ],
+            "raritySettings": [
+                [
+                    0.45,
+                    0.25,
+                    0.15,
+                    0.0985,
+                    0.05,
+                    0.0015
+                ],
+                [
+                    0.35,
+                    0.3,
+                    0.18,
+                    0.1185,
+                    0.05,
+                    0.0015
+                ],
+                [
+                    0.25,
+                    0.35,
+                    0.21,
+                    0.1285,
+                    0.06,
+                    0.0015
+                ],
+                [
+                    0.2,
+                    0.35,
+                    0.24,
+                    0.1385,
+                    0.07,
+                    0.0015
+                ]
+            ]
+        },
+        "diamond_lucky_crate": {
+            "consumableRequirement": "diamond_lucky_crate",
+            "displayName": "Diamond Lucky Crate",
+            "image": "rbxassetid://93383725335903",
+            "items": [
+                {
+                    "amount": 1,
+                    "itemType": "yuzi_brb",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "hats_off",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "hmm_ok",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "beekeeper_gift",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kaliyah_pumped_up",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "alchemist_evil",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "conqueror_fireball",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "all_good",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "bomb_emoji",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "destroyer",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "legend",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "flying_backpack",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "mythic_gauntlets",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dino_mount",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kitskin_crate_fragment",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_wood_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_stone_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_iron_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_diamond_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_emerald_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_wood_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_stone_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_iron_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_diamond_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_emerald_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_100",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_200",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_350",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_600",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kit_rental_limited_7",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kit_rental_all_7",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_1_5x",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_2x",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_3x",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "random_kit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_black",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_purple",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_red",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "anniversary",
+                    "rarity": 4
+                }
+            ],
+            "raritySettings": [
+                [
+                    0.2,
+                    0.25,
+                    0.3,
+                    0.15,
+                    0.075,
+                    0.025
+                ],
+                [
+                    0.1,
+                    0.2,
+                    0.4,
+                    0.18,
+                    0.09,
+                    0.03
+                ],
+                [
+                    0,
+                    0.2,
+                    0.35,
+                    0.3,
+                    0.11,
+                    0.04
+                ],
+                [
+                    0,
+                    0.2,
+                    0.25,
+                    0.35,
+                    0.15,
+                    0.05
+                ]
+            ]
+        },
+        "kitskin_crate": {
+            "consumableRequirement": "kitskin_crate",
+            "displayName": "Kit Skin Crate",
+            "image": "rbxassetid://93780871049566",
+            "items": [
+                {
+                    "amount": 1,
+                    "itemType": "hannah_bunny",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "silentnight_spirit_assassin",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "meadow_beekeeper",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fallen_jade",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "witch_kaida",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "vulcan_cream_soda",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "grim_reaper_blood_harvest",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "easter_grove",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "bigman_reef",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "day_of_the_dead_cactus",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "melody_rockstar",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "milo_grinch",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "vulcan_vampire",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "void_adetunde",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "recon_raven",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "cryptwrecked",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "triple_shot_demon_empress",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "cowgirl_mummy",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "bigman_spirit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "warlock_christmas_spirit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "farmer_cletus_spirit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "void_walker_harlequin",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "uma_easter_bunny",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "bigman_withered",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "valentine_baker",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "barbarian_bunny",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "tidal_wren",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "great_wolf_silas",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "decayed_fortuna",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dodo_whisper",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "wanderer_bounty_hunter",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "cyber_dj",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "mummy_nazar",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "elysium_grove",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "void_knight_ice",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "spirit_catcher_siren",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "oil_man_void",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "void_knight_pumpkin",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "trinity_icecream",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "wrangler_reindeer_lassy",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "aery_valentine",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dodo_evelynn",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "axolotl_easter_bunny",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "hannah_lunar",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "demon_triton",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "melody_holiday_cozy",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "triple_shot_valentine",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "nutcracker_builder",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "jellyfish_dessert",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "celestial_wind_walker",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "gun_blade_summer",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "ice_viking_warrior",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "halloween_wren",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dasher_snow_rabbit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "jellyfish_holiday",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "snowangel_kaida",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "ember_krampus",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "trinity_fallen",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "sailor_bekzat",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "archer_lunar_dragon",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "ice_queen_bunny",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "flower_bee_frost_queen",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "davey_deepsea",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dragon_sword_jiang_shi",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dragon_sword_lunar",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "necromancer_christmas",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "farmer_cletus_valentine",
+                    "rarity": 5
+                }
+            ],
+            "raritySettings": [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ]
+        },
+        "level_up_crate": {
+            "consumableRequirement": "level_up_crate",
+            "displayName": "Gold Lucky Crate",
+            "image": "rbxassetid://76335648101819",
+            "items": [
+                {
+                    "amount": 1,
+                    "itemType": "yuzi_brb",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "hats_off",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "hmm_ok",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "beekeeper_gift",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kaliyah_pumped_up",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "alchemist_evil",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "conqueror_fireball",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "all_good",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "bomb_emoji",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "destroyer",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "legend",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "flying_backpack",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "mythic_gauntlets",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "dino_mount",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kitskin_crate_fragment",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_wood_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_stone_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_iron_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_diamond_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "banana_emerald_sword",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_wood_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_stone_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_iron_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_diamond_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "balloon_emerald_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_100",
+                    "rarity": 0
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_200",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_350",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "BED_COIN_600",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kit_rental_limited_7",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "kit_rental_all_7",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_1_5x",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_2x",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "itemType": "armor_trim_3x",
+                    "rarity": 3
+                },
+                {
+                    "amount": 1,
+                    "itemType": "random_kit",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_black",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_purple",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "fire_red",
+                    "rarity": 4
+                },
+                {
+                    "amount": 1,
+                    "itemType": "anniversary",
+                    "rarity": 4
+                }
+            ],
+            "raritySettings": [
+                [
+                    0.38,
+                    0.32,
+                    0.2,
+                    0.0825,
+                    0.015,
+                    0.0025
+                ],
+                [
+                    0.18,
+                    0.4,
+                    0.25,
+                    0.1425,
+                    0.025,
+                    0.0025
+                ],
+                [
+                    0.1,
+                    0.3,
+                    0.35,
+                    0.2025,
+                    0.045,
+                    0.0025
+                ],
+                [
+                    0,
+                    0.2,
+                    0.47,
+                    0.2575,
+                    0.06,
+                    0.0125
+                ]
+            ]
+        },
+        "murder_crate": {
+            "displayName": "Mystery Crate",
+            "image": "",
+            "items": [
+                {
+                    "amount": 1,
+                    "itemType": "sleep_splash_potion",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "pie",
+                    "rarity": 1
+                },
+                {
+                    "amount": 1,
+                    "itemType": "wood_sword",
+                    "rarity": 2
+                },
+                {
+                    "amount": 1,
+                    "extraItems": [
+                        {
+                            "amount": 8,
+                            "itemType": "arrow"
+                        }
+                    ],
+                    "itemType": "wood_bow",
+                    "rarity": 2
+                }
+            ],
+            "raritySettings": [
+                [
+                    0.38,
+                    0.35,
+                    0.2,
+                    0.05,
+                    0.02,
+                    0
+                ],
+                [
+                    0.38,
+                    0.35,
+                    0.2,
+                    0.05,
+                    0.02,
+                    0
+                ],
+                [
+                    0.38,
+                    0.35,
+                    0.2,
+                    0.05,
+                    0.02,
+                    0
+                ],
+                [
+                    0.38,
+                    0.35,
+                    0.2,
+                    0.05,
+                    0.02,
+                    0
+                ]
+            ]
+        }
+    }
+}
