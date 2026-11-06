@@ -1874,10 +1874,8 @@ run(function()
 		end,
 		ExtraText = function()
 			if not select(2, getAttackData()) then return '0ms' end
-			
 			return math.round(calcHitreg(select(2, getAttackData())) * 1000)..'ms'
 		end,
-
 		Tooltip = 'Attack players around you\nwithout aiming at them.'
 	})
 	Hitreg = Killaura:CreateDropdown({
