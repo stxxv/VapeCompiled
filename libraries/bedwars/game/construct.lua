@@ -2099,7 +2099,9 @@ local function getMouseInfo(_, mode, params)
 			or (place and result.Instance:GetAttribute('BlockEngine_Select_IgnorePlaceMode'))
 		)
 	do
-		table.insert(queryParams.FilterDescendantsInstances, result.Instance)
+		local filter = table.clone(queryParams.FilterDescendantsInstances)
+		table.insert(filter, result.Instance)
+		queryParams.FilterDescendantsInstances = filter
 		result = cast()
 	end
 
