@@ -3906,7 +3906,7 @@ bedwars.KnockbackUtil = {
 		end
 		return away.Unit
 	end,
-	calculateKnockbackVelocity = function(_, dir, mass, options)
+	calculateKnockbackVelocity = function(dir, mass, options)
 		if dir.Magnitude == 0 then
 			return Vector3.zero
 		end
@@ -3926,7 +3926,7 @@ bedwars.KnockbackUtil = {
 	end,
 	calculateKnockbackVelocityRelative = function(_, entity, mass, dir, options)
 		local from = entity and entity.Position or Vector3.zero
-		return bedwars.KnockbackUtil:calculateKnockbackVelocity(
+		return bedwars.KnockbackUtil.calculateKnockbackVelocity(
 			bedwars.KnockbackUtil:getDirection(from, dir),
 			mass,
 			options
@@ -3947,7 +3947,7 @@ bedwars.KnockbackUtil = {
 		if rootPart == nil or typeof(dir) ~= 'Vector3' then
 			return
 		end
-		local velocity = bedwars.KnockbackUtil:calculateKnockbackVelocity(dir, mass, options)
+		local velocity = bedwars.KnockbackUtil.calculateKnockbackVelocity(dir, mass, options)
 		bedwars.KnockbackUtil:applyKnockbackPlatformStand(rootPart)
 		rootPart:ApplyImpulse(velocity)
 		return velocity
