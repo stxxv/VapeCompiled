@@ -4381,11 +4381,26 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 	-- block's placement sound to the audio controller as part of the placement, before the
 	-- remote goes out. on ce vape is the local placer, so both have to happen here or a
 	-- vape placement is the only block in the game that places silently and without a swing
-	bedwars.AnimationUtil:playAnimation(
-		lplr,
-		bedwars.BlockController:getAnimationController():getAssetId(0),
-		{ fadeSamePriorityTracks = false }
-	)
+	local swing = {
+		animation = bedwars.AnimationUtil:playAnimation(
+			lplr,
+			bedwars.BlockController:getAnimationController():getAssetId(0),
+			{ fadeSamePriorityTracks = false }
+		),
+		-- the real controller answers the placer's onPlace with the first person use swing
+		-- (FP_USE_ITEM). its tracks are never looped, but the asset is authored looped and
+		-- only the real controller forces that off, so it has to be asked for here
+		viewmodel = bedwars.ViewmodelController:playAnimation(bedwars.AnimationType.FP_USE_ITEM, { looped = false }),
+	}
+	-- every placement gets its own track like the real one, cleaned up once it has played
+	task.delay(0.3, function()
+		swing.animation:Stop()
+		swing.animation:Destroy()
+		if swing.viewmodel then
+			swing.viewmodel:Stop()
+			swing.viewmodel:Destroy()
+		end
+	end)
 	bedwars.BlockPlacementAudioController:playPlaceAudio({ blockPosition = blockpos }, item)
 
 	-- stands in for the local block the real placer creates before it sends anything:
