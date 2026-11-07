@@ -264,6 +264,7 @@
             "itemType": "iron_dao",
             "lockAfterPurchase": true,
             "nextTier": "diamond_dao",
+            "prevTier": "stone_dao",
             "price": 85,
             "requiresKit": [
                 "dasher"
@@ -283,6 +284,7 @@
             "itemType": "diamond_dao",
             "lockAfterPurchase": true,
             "nextTier": "emerald_dao",
+            "prevTier": "iron_dao",
             "price": 6,
             "requiresKit": [
                 "dasher"
@@ -301,6 +303,7 @@
             "currency": "emerald",
             "itemType": "emerald_dao",
             "lockAfterPurchase": true,
+            "prevTier": "diamond_dao",
             "price": 24,
             "requiresKit": [
                 "dasher"
@@ -485,6 +488,7 @@
             "itemType": "iron_scythe",
             "lockAfterPurchase": true,
             "nextTier": "diamond_scythe",
+            "prevTier": "stone_scythe",
             "price": 70,
             "requireAttribute": "SCYTHE",
             "spawnWithItems": [
@@ -518,6 +522,7 @@
             "itemType": "diamond_scythe",
             "lockAfterPurchase": true,
             "nextTier": "mythic_scythe",
+            "prevTier": "iron_scythe",
             "price": 4,
             "requireAttribute": "SCYTHE",
             "spawnWithItems": [
@@ -550,6 +555,7 @@
             ],
             "itemType": "mythic_scythe",
             "lockAfterPurchase": true,
+            "prevTier": "diamond_scythe",
             "price": 20,
             "requireAttribute": "SCYTHE"
         },
@@ -631,6 +637,7 @@
             "itemType": "iron_great_hammer",
             "lockAfterPurchase": true,
             "nextTier": "diamond_great_hammer",
+            "prevTier": "stone_great_hammer",
             "price": 70,
             "requireAttribute": "GREAT_HAMMER",
             "spawnWithItems": [
@@ -664,6 +671,7 @@
             "itemType": "diamond_great_hammer",
             "lockAfterPurchase": true,
             "nextTier": "mythic_great_hammer",
+            "prevTier": "iron_great_hammer",
             "price": 4,
             "requireAttribute": "GREAT_HAMMER",
             "spawnWithItems": [
@@ -696,6 +704,7 @@
             ],
             "itemType": "mythic_great_hammer",
             "lockAfterPurchase": true,
+            "prevTier": "diamond_great_hammer",
             "price": 20,
             "requireAttribute": "GREAT_HAMMER"
         },
@@ -777,6 +786,7 @@
             "itemType": "iron_dagger",
             "lockAfterPurchase": true,
             "nextTier": "diamond_dagger",
+            "prevTier": "stone_dagger",
             "price": 70,
             "requireAttribute": "DAGGER",
             "spawnWithItems": [
@@ -810,6 +820,7 @@
             "itemType": "diamond_dagger",
             "lockAfterPurchase": true,
             "nextTier": "mythic_dagger",
+            "prevTier": "iron_dagger",
             "price": 4,
             "requireAttribute": "DAGGER",
             "spawnWithItems": [
@@ -842,6 +853,7 @@
             ],
             "itemType": "mythic_dagger",
             "lockAfterPurchase": true,
+            "prevTier": "diamond_dagger",
             "price": 20,
             "requireAttribute": "DAGGER"
         },
@@ -923,6 +935,7 @@
             "itemType": "iron_gauntlets",
             "lockAfterPurchase": true,
             "nextTier": "diamond_gauntlets",
+            "prevTier": "stone_gauntlets",
             "price": 70,
             "requireAttribute": "GAUNTLETS",
             "spawnWithItems": [
@@ -956,6 +969,7 @@
             "itemType": "diamond_gauntlets",
             "lockAfterPurchase": true,
             "nextTier": "mythic_gauntlets_plain",
+            "prevTier": "iron_gauntlets",
             "price": 4,
             "requireAttribute": "GAUNTLETS",
             "spawnWithItems": [
@@ -988,6 +1002,7 @@
             ],
             "itemType": "mythic_gauntlets_plain",
             "lockAfterPurchase": true,
+            "prevTier": "diamond_gauntlets",
             "price": 20,
             "requireAttribute": "GAUNTLETS"
         },
@@ -3019,7 +3034,7 @@
         }
     ],
     "CombatConstant": {
-        "RAYCAST_SWORD_CHARACTER_DISTANCE": 14.399999999999999,
+        "RAYCAST_SWORD_CHARACTER_DISTANCE": 14.4,
         "REGION_SWORD_CHARACTER_DISTANCE": 12.600000000000001
     },
     "WinEffectMeta": {
@@ -4870,8 +4885,11 @@
         "GUM_FOOTSTEP_3": "rbxassetid://14191160797",
         "GUM_FOOTSTEP_4": "rbxassetid://14191014814",
         "GUN_BLADE_SHOT": "rbxassetid://100863134244354",
+        "GUN_BLADE_SHOT_HALLOWEEN": "rbxassetid://84217576746539",
         "GUN_BLADE_SHOT_SUMMER": "rbxassetid://119168544114431",
         "GUN_BLADE_TRIGGER": "rbxassetid://140492371413222",
+        "GUN_BLADE_TRIGGER_HALLOWEEN": "rbxassetid://110071480961851",
+        "GUN_BLADE_TRIGGER_HALLOWEEN_2": "rbxassetid://79956831899129",
         "GUN_BLADE_TRIGGER_SUMMER": "rbxassetid://108534371441481",
         "HAIR_DRYER_END": "rbxassetid://85803429496861",
         "HAIR_DRYER_LOOP": "rbxassetid://80010515004933",
@@ -9193,7 +9211,7 @@
             ],
             "basePriceRobux": 599,
             "battlepassSeason": "season1",
-            "description": "Carry a jar of regenerating spirits. Catch wisps from damaged enemies to recharge faster, and recall unused spirits. Place idle spirits together to fuse them into a larger spirit with a chain of shrinking explosions.",
+            "description": "Carry a jar of regenerating spirits. Catch wisps to recharge faster, and recall unused spirits. Fusions haunt enemies for 6 seconds. Your sword hits consume ghosts for guaranteed crits; larger fusions give stronger bonuses, direct arrows give half. Unused ghosts refund 13 seconds of recharge each on expiry or target death.",
             "devProductId": 3724169334,
             "difficulty": 1,
             "kitClass": 7,
@@ -10989,6 +11007,7 @@
                 "breakType": "grass",
                 "greedyMesh": {
                     "emissiveTextureBrightness": 2,
+                    "material": "Neon",
                     "textures": [
                         "rbxassetid://12946930317",
                         "rbxassetid://12946930317",
@@ -16159,6 +16178,7 @@
                 "breakType": "grass",
                 "greedyMesh": {
                     "emissiveTextureBrightness": 2,
+                    "material": "Neon",
                     "textures": [
                         "rbxassetid://12946930610",
                         "rbxassetid://12946930610",
@@ -17223,7 +17243,7 @@
             "consumable": {
                 "consumeTime": 1,
                 "potion": true,
-                "soundOverride": "rbxassetid://15609606221"
+                "soundOverride": "rbxassetid://15609606961"
             },
             "description": "Drink to gain protection from the snow!",
             "displayName": "Hot Chocolate",
@@ -18231,6 +18251,7 @@
                 "breakType": "grass",
                 "greedyMesh": {
                     "emissiveTextureBrightness": 2,
+                    "material": "Neon",
                     "textures": [
                         "rbxassetid://12946930661",
                         "rbxassetid://12946930661",
@@ -18882,6 +18903,7 @@
                 ],
                 "greedyMesh": {
                     "emissiveTextureBrightness": 2,
+                    "material": "Neon",
                     "textures": [
                         "rbxassetid://9439108691",
                         "rbxassetid://9439108691",
@@ -22264,7 +22286,7 @@
             "image": "rbxassetid://102285628641008"
         },
         "spirit_lantern": {
-            "description": "Release regenerating spirits. Catch wisps to recharge faster, or recall unused spirits.",
+            "description": "Release regenerating spirits. Fusions haunt for 6s. Your sword hits spend ghosts for crits; larger fusions give stronger bonuses, direct arrows give half. Unused ghosts refund 13s recharge each on expiry or target death.",
             "displayName": "Spirit Jar",
             "firstPerson": {
                 "scale": 0.85
@@ -23869,7 +23891,7 @@
                 "projectileTypeMap": {
                     "arrow": "ghost"
                 },
-                "walkSpeedMultiplier": 0.7
+                "walkSpeedMultiplier": 0.85
             },
             "sharingDisabled": true
         },
@@ -24395,6 +24417,7 @@
                 "breakType": "stone",
                 "greedyMesh": {
                     "emissiveTextureBrightness": 2,
+                    "material": "Neon",
                     "textures": [
                         "rbxassetid://15380237968",
                         "rbxassetid://15380237968",
@@ -26852,6 +26875,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -26885,6 +26912,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -27785,6 +27816,10 @@
                 },
                 {
                     "mapName": "duels_Autumn",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Autumn-V2",
                     "weight": 1
                 },
                 {
@@ -29538,6 +29573,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -29571,6 +29610,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -29662,6 +29705,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -29695,6 +29742,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -31114,6 +31165,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -31147,6 +31202,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -31235,6 +31294,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -31268,6 +31331,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -31356,6 +31423,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -31389,6 +31460,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -32622,6 +32697,214 @@
             "title": "BedWars Voice Chat (Squads)",
             "voiceChatOnly": true
         },
+        "blitz_ranked_duels": {
+            "backgroundImageRender": [
+                "rbxassetid://110051754593493"
+            ],
+            "bedwars": {
+                "reconnectEnabled": true
+            },
+            "disableInCustom": true,
+            "disableLimitedTimeItems": true,
+            "disabled": false,
+            "disabledFeatures": {
+                "disableBedPlating": true,
+                "disableMajorWeatherEvents": true,
+                "disableTeamBuff": true
+            },
+            "endTime": 1795820400,
+            "eventText": "⚡ <font color=\"rgb(255,85,255)\">BLITZ RANKED MODE!</font> ⚡",
+            "forceKitSkins": true,
+            "game": "bedwars",
+            "glickoCategory": "DUELS",
+            "globalGenSpeedMultipliers": {
+                "all": 2
+            },
+            "helperIcons": {
+                "text": [
+                    [
+                        "⚡",
+                        "Blitz Ranked"
+                    ]
+                ]
+            },
+            "hudWidgets": [
+                "beds"
+            ],
+            "killBounties": true,
+            "kitModelPreloadTime": 10,
+            "maps": [
+                {
+                    "mapName": "duels_Bloom",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Voidlands",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Enchanted-Forest",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Pagoda_HW",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Volatile",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Volatile-Wastelands",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Grim-Ruins",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Glacier",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Oni-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Sand-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Canyon",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Spooky-Mystic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Farmland",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Desert-Shrine",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_SteamPunk",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Darkholm",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Swamp",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Autumn",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Autumn-V2",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Crystalmount",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Grandpeak",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Skull-Island",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Fountain-Peaks",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Seasonal",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Candyland",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Spooky-Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Oriental",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Spirit-Valley",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Spirit-Ruins",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Red-Cliff",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Lighthouse",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Pinewood",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Grim-Glade",
+                    "weight": 1
+                }
+            ],
+            "matchStartTime": 25,
+            "matchValidator": {
+                "reqPlayersPerTeamPercentile": 0.6
+            },
+            "partyEloFunction": "max",
+            "placeId": 8560631822,
+            "playerLevelReq": 20,
+            "queueDodgeConfig": "ranked",
+            "queueSize": {
+                "max": 2,
+                "min": 1
+            },
+            "revealEnemies": {
+                "revealTeamOnBedBreak": {
+                    "delaySec": 60,
+                    "enabled": true
+                }
+            },
+            "teams": [
+                {
+                    "colorHex": 4830450,
+                    "displayName": "Blue",
+                    "id": "1",
+                    "maxPlayers": 2
+                },
+                {
+                    "colorHex": 15896105,
+                    "displayName": "Orange",
+                    "id": "2",
+                    "maxPlayers": 2
+                }
+            ],
+            "title": "Ranked Blitz: Duels (2v2)"
+        },
         "blitz_ranked_one_in_the_chamber": {
             "backgroundImageRender": [
                 "rbxassetid://124263846907628"
@@ -32640,7 +32923,7 @@
             "disableLeaderboardProgression": true,
             "disableMatchStatsProgression": true,
             "disableRecalling": true,
-            "disabled": false,
+            "disabled": true,
             "disabledFeatures": {
                 "disableEnchantTable": true,
                 "disableMajorWeatherEvents": true,
@@ -32811,7 +33094,7 @@
             "disableFreecam": true,
             "disableGeneratorWhenTeamIsEliminated": true,
             "disableInCustom": true,
-            "disabled": false,
+            "disabled": true,
             "disabledFeatures": {
                 "disableMajorWeatherEvents": true,
                 "disableTeamBuff": true
@@ -34753,7 +35036,7 @@
             "disableMatchStatsProgression": true,
             "disableRecalling": true,
             "disableSpectatePlatform": true,
-            "disabled": false,
+            "disabled": true,
             "disabledFeatures": {
                 "disableBedPlating": true,
                 "disableDiamondGuardians": true,
@@ -34816,7 +35099,7 @@
             "disableMatchStatsProgression": true,
             "disableRecalling": true,
             "disableSpectatePlatform": true,
-            "disabled": false,
+            "disabled": true,
             "disabledFeatures": {
                 "disableEnchantTable": true,
                 "disableTitan": true,
@@ -36670,6 +36953,10 @@
                 {
                     "mapName": "sd_Castle",
                     "weight": 1
+                },
+                {
+                    "mapName": "sd_Winter-Forest",
+                    "weight": 1
                 }
             ],
             "noKits": true,
@@ -37478,6 +37765,10 @@
                     "weight": 1
                 },
                 {
+                    "mapName": "to5_Summit",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Blossom",
                     "weight": 1
                 },
@@ -37511,6 +37802,10 @@
                 },
                 {
                     "mapName": "to5_Sky-Temple",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Abandoned-Cabin",
                     "weight": 1
                 },
                 {
@@ -37775,6 +38070,10 @@
                 },
                 {
                     "mapName": "duels_Autumn",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Autumn-V2",
                     "weight": 1
                 },
                 {
@@ -44933,10 +45232,19 @@
         "GUN_BLADE_SHOT": {
             "category": "Gameplay"
         },
+        "GUN_BLADE_SHOT_HALLOWEEN": {
+            "category": "Gameplay"
+        },
         "GUN_BLADE_SHOT_SUMMER": {
             "category": "Gameplay"
         },
         "GUN_BLADE_TRIGGER": {
+            "category": "Gameplay"
+        },
+        "GUN_BLADE_TRIGGER_HALLOWEEN": {
+            "category": "Gameplay"
+        },
+        "GUN_BLADE_TRIGGER_HALLOWEEN_2": {
             "category": "Gameplay"
         },
         "GUN_BLADE_TRIGGER_SUMMER": {
