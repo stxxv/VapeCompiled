@@ -1643,7 +1643,7 @@ run(function()
 
 	local function calcHitreg(meta)
 		if not meta or not meta.sword or not meta.sword.attackSpeed then
-			return 0.3
+			return 0
 		end
 
 		local base = meta.sword.attackSpeed
@@ -1872,10 +1872,7 @@ run(function()
 			end
 		end,
 		ExtraText = function()
-			if not select(2, getAttackData()) then return '0ms' end
-
-			local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(select(2, getAttackData()))
-			return math.round(delay * 1000)..'ms'
+			return math.round(((Hitreg.Value == 'Static' and 0.3) or calcHitreg(select(2, getAttackData()))) * 1000)..'ms'
 		end,
 		Tooltip = 'Attack players around you\nwithout aiming at them.'
 	})

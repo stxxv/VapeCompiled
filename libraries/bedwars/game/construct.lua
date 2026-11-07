@@ -422,7 +422,7 @@ if not ce then
 
                             if blockhealthbar.blockHealth <= 0 then
                                 bedwars.BlockBreaker.breakEffect:playBreak(dblock.Name, dpos, lplr)
-                                bedwars.BlockBreaker.healthbarMaid:DoCleaning()
+                                bedwars.BlockBreaker.maid:DoCleaning()
                                 blockhealthbar.breakingBlockPosition = Vector3.zero
                             else
                                 bedwars.BlockBreaker.breakEffect:playHit(dblock.Name, dpos, lplr)
@@ -3889,30 +3889,43 @@ local function getKnockbackConstants()
 	}
 end
 
+-- the real KnockbackUtil is what a self-damage fireball/explosion measures its own boost
+-- with (LongJump reads it back), so its numbers have to match or the jump flies the wrong
+-- distance. 1-1 with TS.damage['knockback-util'].
+local knockbackPlatformStandRunIds = {}
+
 bedwars.KnockbackUtil = {
 	getDirection = function(_, from, dir)
-		if typeof(dir) ~= 'Vector3' or (dir.X == 0 and dir.Y == 0 and dir.Z == 0) then
+		if dir == nil then
 			return Vector3.zero
 		end
-		local flat = Vector3.new(dir.X, 0, dir.Z)
-		if flat.Magnitude < 0.0001 then
-			flat = workspace.CurrentCamera.CFrame.LookVector
+		local flat = Vector3.new(dir.X or 0, 0, dir.Z or 0)
+		local away = Vector3.new(from.X, 0, from.Z) - flat
+		if away.Magnitude == 0 then
+			return Vector3.zero
 		end
-		return (flat.Unit * 0.7 + Vector3.new(0, 1, 0) * 0.4 + dir.Unit * 0.4).Unit
+		return away.Unit
 	end,
 	calculateKnockbackVelocity = function(_, dir, mass, options)
-		local workspaceAttr = tonumber(workspace:GetAttribute('kbmultiplier')) or 1
-		local horizontalMultiplier = workspaceAttr * ((options and options.horizontalMultiplier) or 1)
-		local verticalMultiplier = workspaceAttr * ((options and options.verticalMultiplier) or 1)
+		if dir.Magnitude == 0 then
+			return Vector3.zero
+		end
+		local vertical = options and options.vertical
+		if vertical == nil then
+			vertical = 1
+		end
+		local horizontal = options and options.horizontal
+		if horizontal == nil then
+			horizontal = 1
+		end
 		local constants = getKnockbackConstants()
-		return dir * constants.kbDirectionStrength * (mass / constants.kbStandardMass) * horizontalMultiplier
-			+ Vector3.new(0, 1, 0)
-				* constants.kbUpwardStrength
-				* (mass / constants.kbStandardMass)
-				* verticalMultiplier
+		local velocity = (Vector3.new(0, constants.kbUpwardStrength * vertical, 0)
+			+ dir.Unit * (constants.kbDirectionStrength * horizontal)) * (mass / constants.kbStandardMass)
+		local workspaceAttr = tonumber(workspace:GetAttribute('kbmultiplier')) or 1
+		return velocity * workspaceAttr * 0.9
 	end,
 	calculateKnockbackVelocityRelative = function(_, entity, mass, dir, options)
-		local from = entity and entity.PrimaryPart and entity.PrimaryPart.Position or Vector3.zero
+		local from = entity and entity.Position or Vector3.zero
 		return bedwars.KnockbackUtil:calculateKnockbackVelocity(
 			bedwars.KnockbackUtil:getDirection(from, dir),
 			mass,
@@ -3920,45 +3933,68 @@ bedwars.KnockbackUtil = {
 		)
 	end,
 	applyKnockback = function(_, rootPart, mass, dir, options)
-		if rootPart == nil or typeof(dir) ~= 'Vector3' or (dir.X == 0 and dir.Y == 0 and dir.Z == 0) then
+		if rootPart == nil then
 			return
 		end
-		local direction = bedwars.KnockbackUtil:getDirection(rootPart.Position, dir)
-		direction = direction - Vector3.new(0, 1, 0) * direction.Y
-		local velocity = bedwars.KnockbackUtil:calculateKnockbackVelocity(direction, mass, options)
-		if velocity.Magnitude < 0.0001 then
-			return
-		end
-		bedwars.KnockbackUtil:applyKnockbackPlatformStand(rootPart)
-		rootPart:ApplyImpulse(velocity * rootPart.AssemblyMass)
-		return velocity
+		return bedwars.KnockbackUtil:applyKnockbackDirection(
+			rootPart,
+			mass,
+			bedwars.KnockbackUtil:getDirection(rootPart.Position, dir),
+			options
+		)
 	end,
 	applyKnockbackDirection = function(_, rootPart, mass, dir, options)
-		if rootPart == nil or typeof(dir) ~= 'Vector3' or (dir.X == 0 and dir.Y == 0 and dir.Z == 0) then
+		if rootPart == nil or typeof(dir) ~= 'Vector3' then
 			return
 		end
 		local velocity = bedwars.KnockbackUtil:calculateKnockbackVelocity(dir, mass, options)
-		if velocity.Magnitude < 0.0001 then
-			return
-		end
 		bedwars.KnockbackUtil:applyKnockbackPlatformStand(rootPart)
-		rootPart:ApplyImpulse(velocity * rootPart.AssemblyMass)
+		rootPart:ApplyImpulse(velocity)
 		return velocity
 	end,
 	predictKnockBackVelocity = function(_, rootPart, mass, dir, options)
+		if rootPart == nil then
+			return
+		end
 		local direction = bedwars.KnockbackUtil:getDirection(rootPart.Position, dir)
-		direction = direction - Vector3.new(0, 1, 0) * direction.Y
-		return bedwars.KnockbackUtil:calculateKnockbackVelocity(direction, mass, options)
+		bedwars.KnockbackUtil:applyKnockbackPlatformStand(rootPart)
+		return bedwars.KnockbackUtil:applyKnockbackDirection(rootPart, mass, direction, options)
 	end,
 	applyKnockbackPlatformStand = function(_, rootPart)
 		if rootPart == nil then
 			return
 		end
-		local assembly = rootPart:FindFirstAncestorWhichIsA('Model') or rootPart
-		local humanoid = assembly:FindFirstChildWhichIsA('Humanoid')
-		if humanoid then
-			humanoid.PlatformStand = true
+		-- the real one sets PlatformStand and clears it again after 0.065s, runId guarded so
+		-- a second knockback inside that window wins. without the reset the humanoid was left
+		-- standing forever
+		local function findHumanoid(instance)
+			local humanoid = instance:FindFirstChildWhichIsA('Humanoid')
+			if humanoid then
+				return humanoid
+			end
+			if instance.Parent then
+				return findHumanoid(instance.Parent)
+			end
+			return nil
 		end
+		local humanoid = rootPart:FindFirstChildWhichIsA('Humanoid')
+			or (rootPart.Parent and findHumanoid(rootPart.Parent))
+		if not humanoid then
+			return
+		end
+		humanoid.PlatformStand = true
+		local runId = math.random()
+		knockbackPlatformStandRunIds[humanoid] = runId
+		task.spawn(function()
+			task.wait(0.065)
+			if knockbackPlatformStandRunIds[humanoid] ~= runId then
+				return
+			end
+			knockbackPlatformStandRunIds[humanoid] = nil
+			if humanoid.Parent then
+				humanoid.PlatformStand = false
+			end
+		end)
 	end,
 }
 
@@ -4037,6 +4073,31 @@ bedwars.BlockPlacer = {
 }
 
 bedwars.BlockPlacementController.blockPlacer = bedwars.BlockPlacer.new(nil, nil, 'wool_white')
+
+-- block-engine out/client/placement/block-placement-audio-controller. the real one plays the
+-- block's own createPlaceAudioPlayers() list, which cannot survive the meta JSON, so this
+-- falls back to the generic place sound every default block uses
+bedwars.BlockPlacementAudioController = {
+	enable = function() end,
+	disable = function() end,
+	playPlaceAudio = function(_, blockRef, blockType)
+		local cell = blockRef and blockRef.blockPosition
+		if typeof(cell) ~= 'Vector3' then
+			return
+		end
+		local character = lplr.Character
+		local root = character and character.PrimaryPart
+		local world = bedwars.BlockController:getWorldPosition(cell)
+		if root and (root.Position - world).Magnitude >= 50 then
+			return
+		end
+		local sound = bedwars.SoundList.GENERIC_BLOCK_PLACE
+		if sound then
+			bedwars.SoundManager:playAudio(sound, { position = world, category = 'GAMEPLAY' })
+		end
+	end,
+}
+
 bedwars.DaoController = { chargingMaid = nil }
 bedwars.VoidDragonController = { flapWings = function() end, inDragonForm = false }
 bedwars.WindWalkerController = { updateSpeed = function() end, spawnOrb = function() end }
@@ -4316,6 +4377,17 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 		placementPosition = mouseInfo.placementPosition or blockpos,
 	}
 
+	-- the real BlockPlacer plays the place animation on the local player and hands the
+	-- block's placement sound to the audio controller as part of the placement, before the
+	-- remote goes out. on ce vape is the local placer, so both have to happen here or a
+	-- vape placement is the only block in the game that places silently and without a swing
+	bedwars.AnimationUtil:playAnimation(
+		lplr,
+		bedwars.BlockController:getAnimationController():getAssetId(0),
+		{ fadeSamePriorityTracks = false }
+	)
+	bedwars.BlockPlacementAudioController:playPlaceAudio({ blockPosition = blockpos }, item)
+
 	-- stands in for the local block the real placer creates before it sends anything:
 	-- the cell reads as taken until the server's copy replicates or it says no
 	local now = tick()
@@ -4494,7 +4566,6 @@ bedwars.breakBlock = function(block, effects, anim, customHealthbar)
 					-- controller drops it instead of lingering for its expiry. both maids:
 					-- the default bar lives on healthbarMaid, the Custom Healthbar the
 					-- module renders lives on maid
-					bedwars.BlockBreaker.healthbarMaid:DoCleaning()
 					bedwars.BlockBreaker.maid:DoCleaning()
 				end
 			end
@@ -4549,16 +4620,20 @@ end
 local zapFolder = replicatedStorage:FindFirstChild('ZAP')
 local zapRemote = zapFolder and zapFolder:FindFirstChild('ZAP_RELIABLE')
 local zapBlockHandlers = { PlaceBlockEvent = {}, BreakBlockEvent = {} }
+local zapEntityDamageHandlers = {}
 local zapFiredAt = {}
 
-local function dispatchZapBlock(kind, blockPosition, blockName, normal, player)
+-- break forwards (blockPosition, blockName, hitPosition, normal, player), place only
+-- (blockPosition, blockName), so the extra payload has to pass through as varargs or the
+-- break handler's player argument lands on the wrong slot and comes out nil
+local function dispatchZapBlock(kind, blockPosition, ...)
 	local key = kind .. tostring(blockPosition)
 	if zapFiredAt[key] and tick() - zapFiredAt[key] < 1 then
 		return
 	end
 	zapFiredAt[key] = tick()
 	for _, handler in zapBlockHandlers[kind] do
-		task.spawn(handler, blockPosition, blockName, normal, player)
+		task.spawn(handler, blockPosition, ...)
 	end
 end
 
@@ -4607,11 +4682,104 @@ if zapRemote and typeof(buffer) == 'table' then
 			cursor += len
 			return value
 		end
+		local function readF64()
+			if cursor + 8 > length then
+				error('ZAP buffer overflow')
+			end
+			local value = buffer.readf64(data, cursor)
+			cursor += 8
+			return value
+		end
+		local function readBool()
+			return readU8() == 1
+		end
+		-- every field past damageType is written with a presence byte first. the real decoder
+		-- reads the same way, and instances come out of the second remote argument by index
+		local function readOptional(reader)
+			if readU8() ~= 1 then
+				return nil
+			end
+			return reader()
+		end
+		local function readInstance()
+			instanceIndex += 1
+			return instances and instances[instanceIndex]
+		end
+		local function readZapEntityDamage()
+			-- TS.lib.network decode of event 0. this is the EntityDamageEvent the game
+			-- actually sends: it travels over ZAP_RELIABLE, not over the _NetManaged
+			-- 'EntityDamageEvent' RemoteEvent the emulation used to hook (which the server
+			-- never fires). without it vapeEvents.EntityDamageEvent never fires on ce, so a
+			-- self-damage fireball never gave LongJump its boost
+			local entityInstance = readInstance()
+			local damage = readF64()
+			local damageType = readU8()
+			local fromPosition = readOptional(function()
+				return Vector3.new(readF32(), readF32(), readF32())
+			end)
+			local fromEntity = readOptional(readInstance)
+			local knockbackMultiplier = readOptional(function()
+				return {
+					horizontal = readOptional(readF64),
+					vertical = readOptional(readF64),
+					disabled = readOptional(readBool),
+				}
+			end)
+			local knockbackId = readOptional(readU16)
+			readOptional(function() -- combatData
+				readOptional(function()
+					return readString(readU16())
+				end)
+				readOptional(readF32)
+				readOptional(function()
+					readU16()
+					return readInstance()
+				end)
+				readOptional(readBool)
+				readOptional(readBool)
+				readOptional(readBool)
+				readOptional(readF32)
+				for _ = 1, 9 do
+					readOptional(readBool)
+				end
+			end)
+			local isVoid = readOptional(readBool)
+			readOptional(readU16)
+			readOptional(function()
+				for _ = 1, readU16() do
+					readU16()
+				end
+			end)
+			local v6 = readOptional(readBool)
+			local disableDamageHighlight = readOptional(readBool)
+			local v8 = readOptional(readU8)
+			for _, handler in zapEntityDamageHandlers do
+				task.spawn(
+					handler,
+					entityInstance,
+					damage,
+					damageType,
+					fromPosition,
+					fromEntity,
+					knockbackMultiplier,
+					knockbackId,
+					nil,
+					isVoid,
+					nil,
+					nil,
+					v6,
+					disableDamageHighlight,
+					v8
+				)
+			end
+		end
 
 		pcall(function()
 			while cursor < length do
 				local id = readU8()
-				if id == 5 then
+				if id == 0 then
+					readZapEntityDamage()
+				elseif id == 5 then
 					local position = Vector3.new(signedU16(readU16()), signedU16(readU16()), signedU16(readU16()))
 					local blockName = readString(readU16())
 					dispatchZapBlock('PlaceBlockEvent', position, blockName)
@@ -4639,15 +4807,17 @@ end
 
 bedwars.ZapNetworking = {
 	SendEvents = function() end,
+	-- fed by the ZAP_RELIABLE decode above, the way TS.lib.network feeds the real one. the
+	-- _NetManaged 'EntityDamageEvent' RemoteEvent exists but the server never fires it, so
+	-- hooking that is what left vapeEvents.EntityDamageEvent silent on ce
 	EntityDamageEventZap = {
 		On = function(handler)
-			local remote = netManaged:FindFirstChild('EntityDamageEvent')
-			if not remote then
-				return function() end
-			end
-			local conn = remote.OnClientEvent:Connect(handler)
+			table.insert(zapEntityDamageHandlers, handler)
 			return function()
-				conn:Disconnect()
+				local index = table.find(zapEntityDamageHandlers, handler)
+				if index then
+					table.remove(zapEntityDamageHandlers, index)
+				end
 			end
 		end,
 	},
