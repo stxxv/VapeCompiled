@@ -1797,8 +1797,7 @@ run(function()
 									end
 
 									if os.clock() >= AttackDelay[v].Attack then
-										local hitreg = calcHitreg(meta)
-										local delay = (Hitreg.Value == 'Dynamic' and math.clamp(math.min(hitreg / 4, 1 / 30), 1 / 60, 0.1)) or 0.3
+										local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(meta)
 
 										AttackDelay[v].Attack = os.clock() + delay
 										AttackDelay[v].Delay = delay
@@ -1874,7 +1873,9 @@ run(function()
 		end,
 		ExtraText = function()
 			if not select(2, getAttackData()) then return '0ms' end
-			return math.round(calcHitreg(select(2, getAttackData())) * 1000)..'ms'
+
+			local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(select(2, getAttackData()))
+			return math.round(delay * 1000)..'ms'
 		end,
 		Tooltip = 'Attack players around you\nwithout aiming at them.'
 	})
