@@ -957,7 +957,7 @@ bedwars.QueryUtil = {
 					params.FilterType == Enum.RaycastFilterType.Exclude
 					or params.FilterType == Enum.RaycastFilterType.Blacklist
 				then
-					params:AddToFilter(hitInst)
+					table.insert(currentFilter, hitInst)
 				else
 					local hitIndex = -1
 					for index, instance in ipairs(currentFilter) do
