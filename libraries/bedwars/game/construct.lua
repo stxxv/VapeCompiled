@@ -4081,19 +4081,11 @@ bedwars.BlockPlacementAudioController = {
 	enable = function() end,
 	disable = function() end,
 	playPlaceAudio = function(_, blockRef, blockType)
-		local cell = blockRef and blockRef.blockPosition
-		if typeof(cell) ~= 'Vector3' then
-			return
-		end
-		local character = lplr.Character
-		local root = character and character.PrimaryPart
-		local world = bedwars.BlockController:getWorldPosition(cell)
-		if root and (root.Position - world).Magnitude >= 50 then
-			return
-		end
+		-- match the working sword-swing pattern: play directly without spatial
+		-- options, which the real placer does for block placement audio
 		local sound = bedwars.SoundList.GENERIC_BLOCK_PLACE
 		if sound then
-			bedwars.SoundManager:playAudio(sound, { position = world, category = 'GAMEPLAY' })
+			bedwars.SoundManager:playAudio(sound)
 		end
 	end,
 }

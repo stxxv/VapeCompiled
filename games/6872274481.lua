@@ -1613,6 +1613,13 @@ run(function()
 	local Hitreg
 	local oldVMIsVisible, oldVMPlayAnimation
 	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
+
+	local BUFFER_MULT, buffered = 0.4, {}
+	local function bufferWindow(meta)
+		local base = (meta and meta.sword) and meta.sword.attackSpeed or 0.3
+		return math.min(base * 0.4, 0.2)
+	end
+
 	task.spawn(function()
 		AttackRemote = bedwars.Client:Get(remotes.AttackEntity).instance
 	end)
@@ -1815,6 +1822,31 @@ run(function()
 												selfPosition = {value = pos}
 											}
 										})
+									elseif AttackDelay[v].Attack - os.clock() <= bufferWindow(meta) and not buffered[v] then
+										buffered[v] = true
+										task.delay(AttackDelay[v].Attack - os.clock(), function()
+											buffered[v] = nil
+											if os.clock() >= AttackDelay[v].Attack then
+												local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(meta)
+
+												AttackDelay[v].Attack = os.clock() + delay
+												AttackDelay[v].Delay = delay
+
+												AttackRemote:FireServer({
+													weapon = sword.tool,
+													chargedAttack = {chargeRatio = 0},
+													entityInstance = v.Character,
+													validate = {
+														raycast = {
+															cameraPosition = {value = pos},
+															cursorDirection = {value = dir}
+														},
+														targetPosition = {value = actualRoot.Position},
+														selfPosition = {value = pos}
+													}
+												})
+											end
+										end)
 									end
 								end
 							end
@@ -1854,15 +1886,16 @@ run(function()
 						lplr.PlayerGui.MobileUI['2'].Visible = true
 					end)
 				end
-			if not ce then
-				debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
-				debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
-			elseif oldVMIsVisible then
-				bedwars.ViewmodelController.isVisible = oldVMIsVisible
-				bedwars.ViewmodelController.playAnimation = oldVMPlayAnimation
-				oldVMIsVisible, oldVMPlayAnimation = nil, nil
-			end
-			Attacking = false
+				if not ce then
+					debug.setupvalue(oldSwing or bedwars.SwordController.playSwordEffect, 7, bedwars.Knit)
+					debug.setupvalue(bedwars.ScytheController.playLocalAnimation, 3, bedwars.Knit)
+				elseif oldVMIsVisible then
+					bedwars.ViewmodelController.isVisible = oldVMIsVisible
+					bedwars.ViewmodelController.playAnimation = oldVMPlayAnimation
+					oldVMIsVisible, oldVMPlayAnimation = nil, nil
+				end
+				Attacking = false
+				table.clear(buffered)
 				if armC0 then
 					AnimTween = tweenService:Create(gameCamera.Viewmodel.RightHand.RightWrist, TweenInfo.new(AnimationTween.Enabled and 0.001 or 0.3, Enum.EasingStyle.Exponential), {
 						C0 = armC0
