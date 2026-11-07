@@ -4100,7 +4100,23 @@ bedwars.BlockPlacementAudioController = {
 
 bedwars.DaoController = { chargingMaid = nil }
 bedwars.VoidDragonController = { flapWings = function() end, inDragonForm = false }
-bedwars.WindWalkerController = { updateSpeed = function() end, spawnOrb = function() end }
+bedwars.WindWalkerController = {
+	updateSpeed = function(self, val)
+		if self.currentSpeedModifier then
+			self.currentSpeedModifier:Destroy()
+		end
+		if val == 1 then
+			return nil
+		end
+		self.currentSpeedModifier = bedwars.SprintController:getMovementStatusModifier():addModifier({ moveSpeedMultiplier = val })
+	end,
+	spawnOrb = function() end
+}
+
+bedwars.Client:OnEvent('WindWalkerSpeedUpdate', function(data)
+    bedwars.WindWalkerController:updateSpeed(data.multiplier)
+end)
+
 bedwars.BatteryEffectsController = {
 	liveBatteries = {},
 	getBatteryInfo = function()
@@ -4420,10 +4436,11 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 	local remote = bedwars.ClientDamageBlock:Get('PlaceBlock')
 	task.spawn(function()
 		-- the server only accepts a placement for the block you are actually holding
+		-- switchItem updates local hand state asynchronously; PlaceBlock is sent without
+		-- waiting for it, matching the real placer which does not yield before sending
 		local handValue = lplr.Character and lplr.Character:FindFirstChild('HandInvItem')
 		if handValue and handValue.Value ~= tool then
 			pcall(switchItem, tool, 0)
-			task.wait()
 		end
 
 		local suc, result = pcall(function()
@@ -4931,37 +4948,9 @@ vape:Clean(bedwars.ZapNetworking.BreakBlockEventZap.On(function(blockPosition, b
 	})
 end))
 
-local knownBlocks = {}
-
-local function scanBlockIndex()
-	local current = {}
-	for _, block in collectionService:GetTagged('block') do
-		if block.Size == Vector3.one * 3 then
-			current[roundBlockPos(block.Position)] = block
-		end
-	end
-	return current
-end
-
-knownBlocks = scanBlockIndex()
-
-task.spawn(function()
-	while vape.Loaded ~= nil do
-		task.wait(0.25)
-		local current = scanBlockIndex()
-		for pos, block in current do
-			if not knownBlocks[pos] then
-				dispatchZapBlock('PlaceBlockEvent', pos, block.Name)
-			end
-		end
-		for pos, block in knownBlocks do
-			if not current[pos] then
-				dispatchZapBlock('BreakBlockEvent', pos, block.Name)
-			end
-		end
-		knownBlocks = current
-	end
-end)
+-- PlaceBlockEvent/BreakBlockEvent are already dispatched from the ZAP decode above
+-- (event ids 5 and 6). the periodic GetTagged scan here duplicated them, only saw
+-- unmerged 3-stud parts, and caused lag/stale answers, so it is not re-added.
 
 local kills = sessioninfo:AddItem('Kills')
 local beds = sessioninfo:AddItem('Beds')

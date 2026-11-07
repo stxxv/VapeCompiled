@@ -483,6 +483,14 @@ local function trackCrateAltars()
 		if altarId == nil then
 			return
 		end
+		-- normalize numeric-string altar ids to numbers so ActiveCrates[1] (number)
+		-- lookups from modules like AutoGamble match the attribute key
+		if type(altarId) == 'string' then
+			local num = tonumber(altarId)
+			if num then
+				altarId = num
+			end
+		end
 
 		local list = controller.activeCrates[altarId]
 		if not list then
@@ -527,7 +535,14 @@ trackCrateAltars()
 local crateAltarDeactivated = netManaged:FindFirstChild('RewardCrate/CrateAltarDeactivated')
 if crateAltarDeactivated then
 	vape:Clean(crateAltarDeactivated.OnClientEvent:Connect(function(data)
-		bedwars.CrateAltarController.activeCrates[data.altarId] = nil
+		local altarId = data and data.altarId
+		if type(altarId) == 'string' then
+			local num = tonumber(altarId)
+			if num then
+				altarId = num
+			end
+		end
+		bedwars.CrateAltarController.activeCrates[altarId] = nil
 	end))
 end
 
