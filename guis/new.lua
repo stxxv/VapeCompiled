@@ -273,7 +273,7 @@ uipallet = {
 	Text = Color3.fromRGB(200, 200, 200),
 	Font = Font.fromEnum(Enum.Font.Arial),
 	FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.SemiBold),
-	Tween = TweenInfo.new(0.16, Enum.EasingStyle.Linear)
+	Tween = TweenInfo.new(0.15, Enum.EasingStyle.Linear)
 }
 
 do
@@ -651,7 +651,7 @@ function vape:CreateNotification(title, text, duration, type)
 		progress.Parent = notification
 
 		if tween.Tween then
-			tween:Tween(notification, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {
+			tween:Tween(notification, TweenInfo.new(0.326, Enum.EasingStyle.Exponential), {
 				AnchorPoint = Vector2.new(1, 0)
 			}, 'tweenstwo')
 
@@ -662,7 +662,7 @@ function vape:CreateNotification(title, text, duration, type)
 
 		task.delay(duration, function()
 			if tween.Tween then
-				tween:Tween(notification, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {
+				tween:Tween(notification, TweenInfo.new(0.326, Enum.EasingStyle.Exponential), {
 					AnchorPoint = Vector2.new(0, 0)
 				}, 'tweenstwo')
 			end
@@ -6802,7 +6802,7 @@ components = {
 		local fill = Instance.new('Frame')
 		fill.BackgroundColor3 = Color3.fromHSV(vape.GUIColor.Hue, vape.GUIColor.Sat, vape.GUIColor.Value)
 		fill.BorderSizePixel = 0
-		fill.Size = UDim2.fromScale(math.clamp((component.Value - props.Min) / props.Max, 0.04, 0.96), 1)
+		fill.Size = UDim2.fromScale(math.clamp((component.Value - props.Min) / (props.Max - props.Min), 0.04, 0.96), 1)
 		fill.Parent = holder
 		local knobholder = Instance.new('Frame')
 		knobholder.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -6846,7 +6846,7 @@ components = {
 			end
 		
 			tween:Tween(fill, uipallet.Tween, {
-				Size = UDim2.fromScale(math.clamp(position or math.clamp(value / props.Max, 0, 1), 0.04, 0.96), 1)
+				Size = UDim2.fromScale(math.clamp(position or math.clamp((value - props.Min) / (props.Max - props.Min), 0, 1), 0.04, 0.96), 1)
 			})
 		
 			if self.Value ~= value or wasReleased then
@@ -7944,8 +7944,8 @@ components = {
 		local fill = Instance.new('Frame')
 		fill.BackgroundColor3 = Color3.fromHSV(vape.GUIColor.Hue, vape.GUIColor.Sat, vape.GUIColor.Value)
 		fill.BorderSizePixel = 0
-		fill.Position = UDim2.fromScale(math.clamp(component.ValueMin / props.Max, 0.04, 0.96), 0)
-		fill.Size = UDim2.fromScale(math.clamp(math.clamp(component.ValueMax / props.Max, 0, 1), 0.04, 0.96) - fill.Position.X.Scale, 1)
+		fill.Position = UDim2.fromScale(math.clamp((component.ValueMin - props.Min) / (props.Max - props.Min), 0.04, 0.96), 0)
+		fill.Size = UDim2.fromScale(math.clamp(math.clamp((component.ValueMax - props.Min) / (props.Max - props.Min), 0, 1), 0.04, 0.96) - fill.Position.X.Scale, 1)
 		fill.Parent = holder
 		local knob = Instance.new('Frame')
 		knob.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -8014,10 +8014,10 @@ components = {
 			maxvalue.Text = self.ValueMax
 			minvalue.Text = self.ValueMin
 		
-			local size = math.clamp(math.clamp(self.ValueMin / props.Max, 0, 1), 0.04, 0.96)
+			local size = math.clamp(math.clamp((self.ValueMin - props.Min) / (props.Max - props.Min), 0, 1), 0.04, 0.96)
 			tween:Tween(fill, TweenInfo.new(0.1), {
 				Position = UDim2.fromScale(size, 0),
-				Size = UDim2.fromScale(math.clamp(math.clamp(self.ValueMax / props.Max, 0.04, 0.96) - size, 0, 1), 1)
+				Size = UDim2.fromScale(math.clamp(math.clamp((self.ValueMax - props.Min) / (props.Max - props.Min), 0.04, 0.96) - size, 0, 1), 1)
 			})
 		end
 		

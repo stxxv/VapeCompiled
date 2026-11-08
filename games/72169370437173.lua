@@ -37,20 +37,96 @@ local tribes = {}
 local HitboxHook = {Hooks = {}}
 local VelocityTracker = {Entries = setmetatable({}, {__mode = 'k'})}
 local isMatch = false
-local realInput
+local clickQueue = {}
+local clickThread = nil
 
-local function dumpInput()
-	if not realInput then
-		local connection
-		connection = inputService.InputEnded:Connect(function(input)
-			if input.KeyCode == Enum.KeyCode.Return then
-				realInput = input
-				connection:Disconnect()
+local function canClickButton(target)
+	if (not target.Visible) and (not guiService.MenuIsOpen) then
+		return false
+	end
+
+	local pos = target.AbsolutePosition + target.AbsoluteSize / 2
+	if gethui and gethui():IsA('BasePlayerGui') then
+		for _, obj in gethui():GetGuiObjectsAtPosition(pos.X, pos.Y) do
+			if obj:IsA('GuiButton') then
+				return obj == target
 			end
-		end)
+		end
+	end
 
-		vim:SendKeyEvent(true, Enum.KeyCode.Return, false, nil)
-		vim:SendKeyEvent(false, Enum.KeyCode.Return, false, nil)
+	for _, obj in coreGui:GetGuiObjectsAtPosition(pos.X, pos.Y) do
+		if obj:IsA('GuiButton') then
+			return obj == target
+		end
+	end
+
+	for _, obj in lplr.PlayerGui:GetGuiObjectsAtPosition(pos.X, pos.Y) do
+		if obj:IsA('GuiButton') then
+			return obj == target
+		end
+	end
+
+	return false
+end
+
+local function clickButton(obj)
+	if not (obj and obj:IsA('TextButton')) then
+		return
+	end
+
+	if not table.find(clickQueue, obj) then
+		table.insert(clickQueue, obj)
+
+		if not clickThread then
+			task.spawn(function()
+				clickThread = coroutine.running()
+
+				repeat
+					local i, button = next(clickQueue)
+					if i then
+						table.remove(clickQueue, i)
+
+						if canClickButton(button) then
+							local cPos = (button.AbsolutePosition + button.AbsoluteSize / 2) + guiService:GetGuiInset()
+
+							if inputService.TouchEnabled then
+								vim:SendTouchEvent(0, 0, cPos.X, cPos.Y)
+								vim:SendTouchEvent(0, 2, cPos.X, cPos.Y)
+							else
+								vim:SendMouseButtonEvent(cPos.X, cPos.Y, 0, true, gui, 0)
+								vim:SendMouseButtonEvent(cPos.X, cPos.Y, 0, false, gui, 0)
+							end
+
+							task.wait(0.016)
+						end
+					else
+						clickThread = nil
+						break
+					end
+				until false
+			end)
+		end
+	end
+end
+
+local function getCaller()
+	for i = 1, 7 do
+		if debug.validlevel(i) and not isexecutorclosure(debug.info(i, 'f')) then
+			return debug.info(i, 'ns')
+		end
+	end
+end
+
+local function hideStack()
+	if setstackhidden then
+		local ffunctions = {debug.info(1, 'f'), debug.info(2, 'f'), debug.info(3, 'f'), debug.info(4, 'f'), debug.info(5, 'f')}
+		for _, func in ffunctions do
+			if isexecutorclosure(func) then
+				setstackhidden(func, true)
+			end
+		end
+
+		table.clear(ffunctions)
 	end
 end
 
@@ -78,7 +154,73 @@ local function removeTags(str)
 	return (str:gsub('<[^<>]->', ''))
 end
 
+local function safeget(...)
+	local args = {...}
+	local obj = table.remove(args, 1)
+
+	for index, dir in args do
+		obj = rawget(obj, dir)
+
+		if not obj then
+			return nil
+		end
+	end
+
+	return obj
+end
+
+local function argCheck(expected, ...)
+	if select('#', ...) > #expected then
+		return false
+	end
+
+	for index, value in {...} do
+		if not table.find(expected[index], typeof(value)) then
+			return false
+		end
+	end
+
+	return true
+end
+
 run(function()
+	local function waitForChildOfType(obj, name, timeout, prop, namecheck)
+		local expireTime = os.clock() + timeout
+
+		repeat
+			local result = prop and obj[name] or obj:FindFirstChildWhichIsA(name)
+			if result and namecheck then
+				if result.Name ~= namecheck then
+					result = nil
+				end
+			end
+
+			if result then
+				return cloneref(result)
+			end
+
+			task.wait()
+		until expireTime < os.clock()
+	end
+
+	entitylib.getUpdateConnections = function(entity)
+		local hum = entity.Humanoid
+		return {
+			hum:GetPropertyChangedSignal('Health'),
+			hum:GetPropertyChangedSignal('MaxHealth'),
+			entity.Character:GetAttributeChangedSignal('Armor'),
+			{
+				Connect = function()
+					entity.Friend = entity.Player and isFriend(entity.Player) or nil
+					entity.Target = entity.Player and isTarget(entity.Player) or nil
+					return {
+						Disconnect = function() end
+					}
+				end
+			}
+		}
+	end
+
 	entitylib.targetCheck = function(entity)
 		if entity.NPC then return lplr:GetAttribute('Team') ~= entity.Character:GetAttribute('Team') end
 		if isFriend(entity.Player) then return false end
@@ -86,8 +228,63 @@ run(function()
 		return lplr:GetAttribute('Team') ~= entity.Character:GetAttribute('Team')
 	end
 
+	entitylib.isVulnerable = function(entity)
+		return entity.Health > 0 and not entity.Character:GetAttribute('Parrying') and not entity.Character.FindFirstChildWhichIsA(entity.Character, 'ForceField')
+	end
+
 	entitylib.addPlayer = function(plr)
 
+	end
+
+	entitylib.addEntity = function(char, plr, teamfunc, spawntime)
+		if not char then
+			return
+		end
+
+		entitylib.EntityThreads[char] = task.spawn(function()
+			local hum = waitForChildOfType(char, 'Humanoid', 10)
+			local humrootpart = hum and waitForChildOfType(hum, 'RootPart', workspace.StreamingEnabled and math.huge or 10, true, 'HumanoidRootPart')
+			local head = cloneref(char:WaitForChild('Head', 10) or humrootpart or workspace)
+
+			if hum and humrootpart then
+				local entity = {
+					Connections = {},
+					Character = char,
+					Health = hum.Health + (char:GetAttribute('Armor') or 0),
+					Head = head,
+					Humanoid = hum,
+					HumanoidRootPart = humrootpart,
+					HipHeight = hum.HipHeight + (humrootpart.Size.Y / 2) + (hum.RigType == Enum.HumanoidRigType.R6 and 2 or 0),
+					MaxHealth = hum.MaxHealth,
+					NPC = plr == nil,
+					Player = plr,
+					RootPart = humrootpart,
+					SpawnTime = spawntime or 0,
+					TeamCheck = teamfunc
+				}
+
+				if plr == lplr then
+					entitylib.character = entity
+					entitylib.isAlive = true
+					entitylib.Events.LocalAdded:Fire(entity)
+				else
+					entity.Targetable = entitylib.targetCheck(entity)
+
+					for _, connection in entitylib.getUpdateConnections(entity) do
+						table.insert(entity.Connections, connection:Connect(function()
+							entity.Health = hum.Health + (char:GetAttribute('Armor') or 0)
+							entity.MaxHealth = hum.MaxHealth
+							entitylib.Events.EntityUpdated:Fire(entity)
+						end))
+					end
+
+					table.insert(entitylib.List, entity)
+					entitylib.Events.EntityAdded:Fire(entity)
+				end
+			end
+
+			entitylib.EntityThreads[char] = nil
+		end)
 	end
 
 	local oldstart = entitylib.start
@@ -129,13 +326,16 @@ run(function()
 		Weapons = require(replicatedStorage.Shared.Weapons),
 		Util = require(lplr.PlayerScripts.Combat.Util),
 		UIState = require(lplr.PlayerScripts.UI.State),
-		WeaponIcon = debug.getupvalue(require(lplr.PlayerScripts.UI.WeaponIcon).Init, 5),
-		WeaponRedraw = debug.getupvalue(debug.getupvalue(debug.getupvalue(require(lplr.PlayerScripts.UI.WeaponIcon).Init, 5), 3), 8)
+		WeaponIcon = debug.getupvalue(rawget(require(lplr.PlayerScripts.UI.WeaponIcon), 'Init'), 5),
+		WeaponRedraw = debug.getupvalue(debug.getupvalue(debug.getupvalue(rawget(require(lplr.PlayerScripts.UI.WeaponIcon), 'Init'), 5), 3), 8)
 	}
 
-	tribes.State = debug.getupvalue(tribes.CombatController.State, 2)
-	tribes.Handlers = debug.getupvalue(debug.getupvalue(tribes.CombatController.Equip, 11), 10)
-	tribes.SetSpeed = debug.getupvalue(debug.getupvalue(tribes.CombatController.Equip, 11), 15)
+	local cIndex = debug.getupvalue(rawget(tribes.CombatController, 'Equip'), 11)
+	cIndex = type(cIndex) == 'function' and debug.info(cIndex, 'n') == 'refreshEquipped' and 11 or 12
+
+	tribes.State = debug.getupvalue(rawget(tribes.CombatController, 'State'), 14)
+	tribes.Handlers = debug.getupvalue(debug.getupvalue(rawget(tribes.CombatController, 'Equip'), cIndex), 10)
+	tribes.SetSpeed = debug.getupvalue(debug.getupvalue(rawget(tribes.CombatController, 'Equip'), cIndex), 15)
 
 	local kills = sessioninfo:AddItem('Kills')
 	local deaths = sessioninfo:AddItem('Deaths')
@@ -160,13 +360,21 @@ run(function()
 
 		return 'None'
 	end, false)
-	isMatch = not workspace:FindFirstChild('Lobby')
 
-	if isMatch then
-		task.delay(1, function()
-			games:Increment()
-		end)
+	local lobbyObj = workspace:FindFirstChild('Lobby')
+	if lobbyObj then
+		vape:Clean(lobbyObj.Destroying:Once(function()
+			isMatch = true
+		end))
+	else
+		isMatch = true
 	end
+
+	vape:Clean(task.delay(1, function()
+		if isMatch then
+			games:Increment()
+		end
+	end))
 
 	vape:Clean(replicatedStorage.Remotes.HitConfirm.OnClientEvent:Connect(function(data)
 		if data and data.killed and isMatch then
@@ -212,18 +420,40 @@ run(function()
 			task.wait()
 		until false
 	end))
+
+	vape:Clean(function()
+		table.clear(clickQueue)
+
+		if clickThread then
+			task.cancel(clickThread)
+			clickThread = nil
+		end
+	end)
 end)
 
 run(function()
 	local oldhitbox
+	local cmp = lplr.PlayerScripts.Combat.Handlers.Melee:GetFullName()
 
 	local function Hook(...)
-		local args = table.pack(...)
-		for _, v in HitboxHook.Hooks do
-			if v[2](args) then return end
+		hideStack()
+
+		local n, s = getCaller()
+		if not (not debug.validlevel(2) and argCheck({{'table'}, {'number'}, {'number'}, {'number'}}, ...) and n == '' and s == cmp) then
+			return oldhitbox(...)
 		end
 
-		return oldhitbox(unpack(args, 1, args.n))
+		local self = ...
+		if getrawmetatable(self) == tribes.Melee and self == tribes.State.handler and type(rawget(self, 'lastSwing')) == 'number' then
+			local args = table.pack(...)
+			for _, v in HitboxHook.Hooks do
+				if v[2](args) then return end
+			end
+
+			return oldhitbox(unpack(args, 1, args.n))
+		end
+
+		return oldhitbox(...)
 	end
 
 	function HitboxHook:Add(key, val, priority)
@@ -233,7 +463,7 @@ run(function()
 		end)
 
 		if not oldhitbox then
-			oldhitbox = hookfunction(tribes.Melee.Detect, function(...)
+			oldhitbox = hookfunction(rawget(tribes.Melee, 'Detect'), function(...)
 				return Hook(...)
 			end)
 		end
@@ -249,9 +479,9 @@ run(function()
 
 		if oldhitbox and not next(self.Hooks) then
 			if restorefunction then
-				restorefunction(tribes.Melee.Detect)
+				restorefunction(rawget(tribes.Melee, 'Detect'))
 			else
-				hookfunction(tribes.Melee.Detect, oldhitbox)
+				hookfunction(rawget(tribes.Melee, 'Detect'), oldhitbox)
 			end
 
 			oldhitbox = nil
@@ -282,7 +512,7 @@ run(function()
 	end
 end)
 
-for _, v in {'AutoClicker', 'TriggerBot', 'HitBoxes', 'Jesus', 'AutoRejoin', 'Disabler', 'MurderMystery', 'Parkour', 'Wallhop'} do
+for _, v in {'AutoClicker', 'TriggerBot', 'HitBoxes', 'Killaura', 'Jesus', 'AutoRejoin', 'Disabler', 'MurderMystery', 'Parkour', 'Wallhop'} do
 	vape:Remove(v)
 end
 
@@ -296,13 +526,21 @@ run(function()
 	local StrafeIncrease
 	local Vertical
 	local ClickAim
+	local moveConst = Vector2.new(1, 0.77) * math.rad(0.5)
+	
+	local function wrapAngle(num)
+		return (num + math.pi % math.tau) - math.pi
+	end
 	
 	AimAssist = vape.Categories.Combat:CreateModule({
 		Name = 'AimAssist',
 		Function = function(callback)
 			if callback then
 				AimAssist:Clean(runService.Heartbeat:Connect(function(dt)
-					if entitylib.isAlive and tribes.State.handler and tribes.State.handler.lastSwing and ((not ClickAim.Enabled) or (os.clock() - (tribes.State.handler.lastSwing or 0)) < 0.5) then
+					local lastSwing = entitylib.isAlive and rawget(tribes.State, 'handler')
+					lastSwing = lastSwing and rawget(lastSwing, 'lastSwing') or nil
+	
+					if lastSwing and ((not ClickAim.Enabled) or (os.clock() - (lastSwing or 0)) < 0.5) then
 						local entity = entitylib.EntityPosition({
 							Range = Distance.Value,
 							Part = 'RootPart',
@@ -311,14 +549,19 @@ run(function()
 							NPCs = Targets.NPCs.Enabled
 						})
 	
-						if entity then
+						if entity and inputService.MouseBehavior == Enum.MouseBehavior.LockCenter and not (guiService.MenuIsOpen or vape.gui.ScaledGui.ClickGui.Visible) then
 							local delta = (entity.RootPart.Position - entitylib.character.RootPart.Position)
 							local localfacing = entitylib.character.RootPart.CFrame.LookVector * Vector3.new(1, 0, 1)
 							local angle = math.acos(localfacing:Dot((delta * Vector3.new(1, 0, 1)).Unit))
 							if angle >= (math.rad(AngleSlider.Value) / 2) then return end
 							targetinfo.Targets[entity] = os.clock() + 1
+	
+							local facing = gameCamera.CFrame.LookVector
 							local lerped = gameCamera.CFrame:Lerp(CFrame.lookAt(gameCamera.CFrame.Position, entity.RootPart.Position), (AimSpeed.Value + (StrafeIncrease.Enabled and (inputService:IsKeyDown(Enum.KeyCode.A) or inputService:IsKeyDown(Enum.KeyCode.D)) and 10 or 0)) * dt).LookVector
-							tribes.Camera.SetLook(math.atan2(-lerped.X, -lerped.Z), Vertical.Enabled and math.asin(lerped.Y) or nil)
+							local diffYaw = wrapAngle(math.atan2(facing.X, facing.Z) - math.atan2(lerped.X, lerped.Z))
+							local diffPitch = math.asin(facing.Y) - math.asin(lerped.Y)
+							local angle = Vector2.new(diffYaw, diffPitch) // (moveConst * UserSettings():GetService('UserGameSettings').MouseSensitivity)
+							vim:SendMouseMoveDeltaEvent(angle.X, Vertical.Enabled and angle.Y or 0, nil)
 						end
 					end
 				end))
@@ -386,8 +629,8 @@ run(function()
 	Value = Reach:CreateSlider({
 		Name = 'Range',
 		Min = 0,
-		Max = 4,
-		Default = 4,
+		Max = 3,
+		Default = 3,
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
@@ -420,6 +663,28 @@ run(function()
 	local Toggles = {}
 	local old
 	
+	local valid = {
+		[lplr.PlayerScripts.Combat.Handlers.Bow:GetFullName()] = {
+			'Fire'
+		},
+		[lplr.PlayerScripts.Combat.Handlers.Gun:GetFullName()] = {
+			'Fire'
+		},
+		[lplr.PlayerScripts.Combat.Handlers.Melee:GetFullName()] = {
+			'Hurl'
+		},
+		[lplr.PlayerScripts.Combat.Handlers.Throw:GetFullName()] = {
+			'Launch'
+		}
+	}
+	
+	local validarg = {
+		[lplr.PlayerScripts.Combat.Handlers.Bow:GetFullName()] = 'Muzzle',
+		[lplr.PlayerScripts.Combat.Handlers.Gun:GetFullName()] = 'Muzzle',
+		[lplr.PlayerScripts.Combat.Handlers.Melee:GetFullName()] = 'None',
+		[lplr.PlayerScripts.Combat.Handlers.Throw:GetFullName()] = 'Throw'
+	}
+	
 	local function getMousePosition()
 		if inputService.TouchEnabled then
 			return gameCamera.ViewportSize / 2
@@ -429,8 +694,14 @@ run(function()
 	end
 	
 	local function Hook(...)
-		local handler
+		hideStack()
 	
+		local n, s = getCaller()
+		if not (argCheck({{'Vector3', 'nil'}}, ...) and valid[s] and table.find(valid[s], n)) then
+			return old(...)
+		end
+	
+		local handler
 		for _, obj in debug.getstack(3) do
 			if type(obj) == 'table' and rawget(obj, 'tuning') then
 				handler = obj
@@ -447,6 +718,19 @@ run(function()
 				end
 			end
 	
+			local arg = ...
+			if arg then
+				if not validarg[s] then
+					return old(...)
+				elseif validarg[s] == 'Muzzle' and arg ~= tribes.Util.ShotOrigin(handler.ctx.tool, 'Muzzle') then
+					return old(...)
+				elseif validarg[s] == 'None' and arg ~= tribes.Util.ShotOrigin(nil) then
+					return old(...)
+				elseif validarg[s] == 'Throw' and arg ~= tribes.Util.ShotOrigin(handler.ctx.tool, 'Tip') and arg ~= tribes.Util.ShotOrigin(nil) then
+					return old(...)
+				end
+			end
+	
 			local entity = entitylib.EntityMouse({
 				Range = Range.Value,
 				Part = Part.Value,
@@ -458,30 +742,32 @@ run(function()
 			if entity then
 				local targetPart = entity[Part.Value]
 				local origin = ... or gameCamera.CFrame.Position
-				local projSpeed = handler.tuning.speed or (handler.tuning.speedMax or 200)
-				local gravity = handler.tuning.gravity or (handler.spreadNow and 0 or 60)
+				local projSpeed = safeget(handler, 'tuning', 'speed') or (safeget(handler, 'tuning', 'speedMax') or 200)
+				local gravity = safeget(handler, 'tuning', 'gravity') or (rawget(handler, 'spreadNow') and 0 or 60)
 				ProjectileRaycast.FilterDescendantsInstances = {gameCamera, entity.Character}
 				ProjectileRaycast.CollisionGroup = targetPart.CollisionGroup
 	
-				if handler.drawStart then
-					projSpeed = select(2, tribes.Combat.DrawnShot(handler.tuning, debug.getstack(3, 4)))
+				if rawget(handler, 'drawStart') then
+					projSpeed = select(2, tribes.Combat.DrawnShot(rawget(handler, 'tuning'), debug.getstack(3, 4)))
 				end
 	
-				if handler.tuning.throw then
-					projSpeed = handler.tuning.throw.speed or 120
-					gravity = handler.tuning.throw.gravity or 0
+				local throw = safeget(handler, 'tuning', 'throw')
+				if throw then
+					projSpeed = rawget(throw, 'speed') or 120
+					gravity = rawget(throw, 'gravity') or 0
 				end
 	
 				local calc = prediction.SolveTrajectory(origin, projSpeed, math.abs(gravity), targetPart.Position + (Part.Value == 'Head' and Vector3.new(0, 0.3, 0) or Vector3.zero), Prediction.Enabled and VelocityTracker:Get(entity.RootPart, PredictionTime.Value) or targetPart.AssemblyLinearVelocity, workspace.Gravity, entity.HipHeight, nil, ProjectileRaycast)
 				if calc then
+					local kind = rawget(handler, 'kind')
 					local lookDir = CFrame.lookAt(origin, calc).LookVector
 					targetinfo.Targets[entity] = os.clock() + 1
 	
-					if handler.maxCharges then
-						return (lookDir - Vector3.new(0, ((handler.kind == 'Bomb') and 0.16) or (((handler.kind == 'Sling') and 0.05) or (((handler.kind ~= 'Javelin') and 0.01) or 0.04)), 0)).Unit
+					if rawget(handler, 'maxCharges') then
+						return (lookDir - Vector3.new(0, ((kind == 'Bomb') and 0.16) or (((kind == 'Sling') and 0.05) or (((kind ~= 'Javelin') and 0.01) or 0.04)), 0)).Unit
 					end
 	
-					if handler.tuning.throw then
+					if throw then
 						local aimPoint = debug.getstack(3, 5)
 						local someMag = (aimPoint - origin).Magnitude
 	
@@ -490,17 +776,17 @@ run(function()
 						end
 					end
 	
-					if handler.spreadNow and handler.kind ~= 'Blunderbuss' then
+					if rawget(handler, 'spreadNow') and kind ~= 'Blunderbuss' then
 						local spread
-						if handler.kind == 'Crossbow' then
+						if kind == 'Crossbow' then
 							spread = 0
 						elseif handler:Aimed() then
-							spread = handler.tuning.spreadAim or 0
+							spread = safeget(handler, 'tuning', 'spreadAim') or 0
 						else
-							spread = handler.tuning.spreadHip or 0
+							spread = safeget(handler, 'tuning', 'spreadHip') or 0
 						end
 	
-						local spreadDir = tribes.Combat.SpreadDir(lookDir, spread, handler:Seed(tribes.State.shotId + 1), 0)
+						local spreadDir = tribes.Combat.SpreadDir(lookDir, spread, handler:Seed(rawget(tribes.State, 'shotId') + 1), 0)
 						return (CFrame.lookAt(Vector3.zero, lookDir) * CFrame.lookAt(Vector3.zero, lookDir):ToObjectSpace(CFrame.lookAt(Vector3.zero, spreadDir)):Inverse()).LookVector
 					end
 	
@@ -520,7 +806,13 @@ run(function()
 			end
 	
 			if callback then
-				old = hookfunction(tribes.Util.AimDirection, function(...)
+				if not setstackhidden then
+					notif('SilentAim', 'setstackhidden only currently.', 10, 'alert')
+					SilentAim:Toggle()
+					return
+				end
+	
+				old = hookfunction(rawget(tribes.Util, 'AimDirection'), function(...)
 					return Hook(...)
 				end)
 	
@@ -534,9 +826,9 @@ run(function()
 			else
 				if old then
 					if restorefunction then
-						restorefunction(tribes.Util.AimDirection)
+						restorefunction(rawget(tribes.Util, 'AimDirection'))
 					else
-						hookfunction(tribes.Util.AimDirection, old)
+						hookfunction(rawget(tribes.Util, 'AimDirection'), old)
 					end
 					old = nil
 				end
@@ -669,79 +961,149 @@ run(function()
 	local AttackRange
 	local AngleSlider
 	local AutoSwing
+	local VerticalReach
 	local AutoBlock
+	local BoxAttackColor
+	local ParticleTexture
+	local ParticleColor1
+	local ParticleColor2
+	local ParticleSize
+	local Particle, Box = nil, nil
+	local gamingThread
 	
 	SilentAura = vape.Categories.Combat:CreateModule({
 		Name = 'SilentAura',
 		Function = function(callback)
 			if callback then
-				local old, didSwing
+				local didSwing
 	
 				SilentAura:Clean(runService.PostSimulation:Connect(function()
-					if entitylib.isAlive and tribes.State.handler and tribes.State.handler.lastSwing then
-						local localPos = entitylib.character.RootPart.Position
-						local localFacing = entitylib.character.RootPart.CFrame.LookVector * Vector3.new(1, 0, 1)
-						local entities = entitylib.AllPosition({
-							Range = AttackRange.Value,
-							Wallcheck = Targets.Walls.Enabled or nil,
-							Part = 'RootPart',
-							Players = Targets.Players.Enabled,
-							NPCs = Targets.NPCs.Enabled,
-							Limit = 10
-						})
+					gamingThread = task.defer(function()
+						local attacked, old, oldpos
+						local handler = rawget(tribes.State, 'handler')
 	
-						if #entities > 0 then
-							for _, entity in entities do
-								local cmpPos = entity.RootPart.Position
-								local delta = (cmpPos - localPos)
-								local yaw = select(2, gameCamera.CFrame:ToEulerAnglesYXZ())
-								local angle = math.abs(CFrame.fromEulerAnglesYXZ(0, yaw, 0).LookVector:Angle(delta * Vector3.new(1, 0, 1)))
+						if entitylib.isAlive and handler and type(rawget(handler, 'lastSwing')) == 'number' then
+							local localPos = entitylib.character.RootPart.Position
+							local localFacing = entitylib.character.RootPart.CFrame.LookVector * Vector3.new(1, 0, 1)
+							local entities = entitylib.AllPosition({
+								Range = AttackRange.Value,
+								Wallcheck = Targets.Walls.Enabled or nil,
+								Part = 'RootPart',
+								Players = Targets.Players.Enabled,
+								NPCs = Targets.NPCs.Enabled,
+								Limit = 10
+							})
 	
-								if angle > (math.rad(AngleSlider.Value) / 2) or delta.Y >= 8 then
-									continue
+							if #entities > 0 then
+								for _, entity in entities do
+									local cmpPos = entity.RootPart.Position
+									local delta = (cmpPos - localPos)
+									local yaw = select(2, gameCamera.CFrame:ToEulerAnglesYXZ())
+									local angle = math.abs(CFrame.fromEulerAnglesYXZ(0, yaw, 0).LookVector:Angle(delta * Vector3.new(1, 0, 1)))
+	
+									if angle > (math.rad(AngleSlider.Value) / 2) or (not VerticalReach.Enabled and math.abs(delta.Y) >= 8) then
+										continue
+									end
+	
+									if AutoSwing.Enabled and not rawget(handler, 'holding') then
+										local gui = lplr.PlayerGui:FindFirstChild('CombatTouch', true)
+										gui = gui and gui.Enabled and gui:FindFirstChild('Attack', true) or nil
+	
+										if gui and gui:IsA('TextButton') and gui.Visible then
+											local cPos = gui.AbsolutePosition + guiService:GetGuiInset()
+											vim:SendTouchEvent(0, 0, cPos.X, cPos.Y)
+										else
+											vim:SendMouseButtonEvent(gameCamera.ViewportSize.X / 2, gameCamera.ViewportSize.Y / 2, 0, true, nil, 0)
+										end
+	
+										didSwing = true
+									end
+	
+									attacked = entity
+									targetinfo.Targets[entity] = os.clock() + 1
+									old = gameCamera.CFrame
+									gameCamera.CFrame = CFrame.lookAlong(old.Position, CFrame.lookAt(localPos, cmpPos).LookVector)
+									if angle > math.rad(100) then
+										entitylib.character.RootPart.CFrame = CFrame.lookAlong(localPos, delta * Vector3.new(1, 0, 1))
+									end
+	
+									if VerticalReach.Enabled then
+										oldpos = entitylib.character.RootPart.CFrame
+										entitylib.character.RootPart.CFrame = CFrame.new(cmpPos)
+									end
+	
+									break
 								end
+							else
+								if AutoSwing.Enabled and rawget(handler, 'holding') and didSwing then
+									local gui = lplr.PlayerGui:FindFirstChild('CombatTouch', true)
+									gui = gui and gui.Enabled and gui:FindFirstChild('Attack', true) or nil
 	
-								if AutoSwing.Enabled and not tribes.State.handler.holding then
-									vim:SendMouseButtonEvent(gameCamera.ViewportSize.X / 2, gameCamera.ViewportSize.Y / 2, 0, true, nil, 0)
-									didSwing = true
+									if gui and gui:IsA('TextButton') and gui.Visible then
+										local cPos = gui.AbsolutePosition + guiService:GetGuiInset()
+										vim:SendTouchEvent(0, 2, cPos.X, cPos.Y)
+									else
+										vim:SendMouseButtonEvent(gameCamera.ViewportSize.X / 2, gameCamera.ViewportSize.Y / 2, 0, false, nil, 0)
+									end
+	
+									didSwing = false
 								end
-	
-								targetinfo.Targets[entity] = os.clock() + 1
-								old = gameCamera.CFrame
-								gameCamera.CFrame = CFrame.lookAlong(old.Position, CFrame.lookAt(localPos, cmpPos).LookVector)
-								if angle > math.rad(100) then
-									entitylib.character.RootPart.CFrame = CFrame.lookAlong(localPos, delta * Vector3.new(1, 0, 1))
-								end
-	
-								break
 							end
-						else
-							if AutoSwing.Enabled and tribes.State.handler.holding and didSwing then
-								vim:SendMouseButtonEvent(gameCamera.ViewportSize.X / 2, gameCamera.ViewportSize.Y / 2, 0, false, nil, 0)
-								didSwing = false
+	
+							--[[if AutoBlock.Enabled and handler.tuning.block then
+								if handler:Ready() and #entities > 0 then
+									handler:SetBlock(false)
+									handler:Swing()
+								end
+	
+								handler:SetBlock(true)
+								if vape.ThreadFix then
+									setthreadidentity(8)
+								end
+							end]]
+						end
+	
+						if Box then
+							Box.Adornee = attacked and attacked.RootPart or nil
+							if Box.Adornee then
+								Box.Color3 = Color3.fromHSV(BoxAttackColor.Hue, BoxAttackColor.Sat, BoxAttackColor.Value)
+								Box.Transparency = 1 - BoxAttackColor.Opacity
 							end
 						end
 	
-						--[[if AutoBlock.Enabled and tribes.State.handler.tuning.block then
-							if tribes.State.handler:Ready() and #entities > 0 then
-								tribes.State.handler:SetBlock(false)
-								tribes.State.handler:Swing()
-							end
+						if Particle then
+							Particle.Position = attacked and attacked.RootPart.Position or Vector3.new(math.huge, math.huge, math.huge)
+							Particle.Parent = attacked and gameCamera or nil
+						end
 	
-							tribes.State.handler:SetBlock(true)
-							if vape.ThreadFix then
-								setthreadidentity(8)
-							end
-						end]]
-					end
-				end))
+						task.wait()
 	
-				SilentAura:Clean(runService.Heartbeat:Connect(function()
-					if old then
-						gameCamera.CFrame = old
-						old = nil
-					end
+						if old then
+							gameCamera.CFrame = old
+							old = nil
+						end
+	
+						if oldpos then
+							entitylib.character.RootPart.CFrame = oldpos
+							oldpos = nil
+						end
+	
+						gamingThread = nil
+					end)
 				end))
+			else
+				if gamingThread then
+					task.cancel(gamingThread)
+					gamingThread = nil
+				end
+	
+				if Box then
+					Box.Adornee = nil
+				end
+	
+				if Particle then
+					Particle.Parent = nil
+				end
 			end
 		end,
 		Tooltip = 'Silently adjust your camera towards nearby targets.'
@@ -768,9 +1130,127 @@ run(function()
 	AutoSwing = SilentAura:CreateToggle({
 		Name = 'Auto swing'
 	})
+	VerticalReach = SilentAura:CreateToggle({
+		Name = 'Vertical reach'
+	})
 	--[[AutoBlock = SilentAura:CreateToggle({
 		Name = 'AutoBlock'
 	})]]
+	SilentAura:CreateToggle({
+		Name = 'Show target',
+		Function = function(callback)
+			BoxAttackColor.Object.Visible = callback
+	
+			if callback then
+				Box = Instance.new('BoxHandleAdornment')
+				Box.Adornee = nil
+				Box.AlwaysOnTop = true
+				Box.CFrame = CFrame.new(0, -0.5, 0)
+				Box.Size = Vector3.new(3, 5, 3)
+				Box.ZIndex = 0
+				Box.Parent = vape.holder
+			else
+				Box:Destroy()
+				Box = nil
+			end
+		end
+	})
+	BoxAttackColor = SilentAura:CreateColorSlider({
+		Name = 'Attack Color',
+		Darker = true,
+		DefaultOpacity = 0.5,
+		Visible = false
+	})
+	SilentAura:CreateToggle({
+		Name = 'Target particles',
+		Function = function(callback)
+			ParticleTexture.Object.Visible = callback
+			ParticleColor1.Object.Visible = callback
+			ParticleColor2.Object.Visible = callback
+			ParticleSize.Object.Visible = callback
+	
+			if callback then
+				Particle = Instance.new('Part')
+				Particle.Size = Vector3.new(2, 4, 2)
+				Particle.Anchored = true
+				Particle.CanCollide = false
+				Particle.Transparency = 1
+				Particle.CanQuery = false
+				Particle.Parent = SilentAura.Enabled and gameCamera or nil
+				local particles = Instance.new('ParticleEmitter')
+				particles.Brightness = 1.5
+				particles.Size = NumberSequence.new(ParticleSize.Value)
+				particles.Shape = Enum.ParticleEmitterShape.Sphere
+				particles.Texture = ParticleTexture.Value
+				particles.Transparency = NumberSequence.new(0)
+				particles.Lifetime = NumberRange.new(0.4)
+				particles.Speed = NumberRange.new(16)
+				particles.Rate = 128
+				particles.Drag = 16
+				particles.ShapePartial = 1
+				particles.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromHSV(ParticleColor1.Hue, ParticleColor1.Sat, ParticleColor1.Value)),
+					ColorSequenceKeypoint.new(1, Color3.fromHSV(ParticleColor2.Hue, ParticleColor2.Sat, ParticleColor2.Value))
+				})
+				particles.Parent = Particle
+			else
+				Particle:Destroy()
+				Particle = nil
+			end
+		end
+	})
+	ParticleTexture = SilentAura:CreateTextBox({
+		Name = 'Texture',
+		Default = 'rbxassetid://14736249347',
+		Function = function()
+			if Particle then
+				Particle.ParticleEmitter.Texture = ParticleTexture.Value
+			end
+		end,
+		Darker = true,
+		Visible = false
+	})
+	ParticleColor1 = SilentAura:CreateColorSlider({
+		Name = 'Color Begin',
+		Function = function(hue, sat, val)
+			if Particle then
+				Particle.ParticleEmitter.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromHSV(hue, sat, val)),
+					ColorSequenceKeypoint.new(1, Color3.fromHSV(ParticleColor2.Hue, ParticleColor2.Sat, ParticleColor2.Value))
+				})
+			end
+		end,
+		Darker = true,
+		Visible = false
+	})
+	ParticleColor2 = SilentAura:CreateColorSlider({
+		Name = 'Color End',
+		Function = function(hue, sat, val)
+			if Particle then
+				Particle.ParticleEmitter.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromHSV(ParticleColor1.Hue, ParticleColor1.Sat, ParticleColor1.Value)),
+					ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, sat, val))
+				})
+			end
+		end,
+		Darker = true,
+		Visible = false
+	})
+	ParticleSize = SilentAura:CreateSlider({
+		Name = 'Size',
+		Min = 0,
+		Max = 1,
+		Default = 0.2,
+		Decimal = 100,
+		Function = function(val)
+			if Particle then
+				Particle.ParticleEmitter.Size = NumberSequence.new(val)
+			end
+		end,
+		Darker = true,
+		Visible = false
+	})
+	
 end)
 
 run(function()
@@ -819,6 +1299,61 @@ run(function()
 			end
 		end,
 		Tooltip = 'Prevents you from dying to the void'
+	})
+end)
+
+run(function()
+	local AntiFreeze
+	
+	local function LocalAdded(char)
+		AntiFreeze:Clean(char.RootPart.AttributeChanged:Connect(function(key)
+			if key == 'SFrozen' and char.RootPart:GetAttribute(key) then
+				char.RootPart:SetAttribute(key, nil)
+			end
+		end))
+	
+		char.RootPart:SetAttribute('SFrozen', nil)
+	end
+	
+	AntiFreeze = vape.Categories.Blatant:CreateModule({
+		Name = 'AntiFreeze',
+		Function = function(callback)
+			if callback then
+				AntiFreeze:Clean(entitylib.Events.LocalAdded:Connect(LocalAdded))
+				if entitylib.isAlive then
+					LocalAdded(entitylib.character)
+				end
+			end
+		end,
+		Tooltip = 'Enable movement during the voting period'
+	})
+end)
+
+run(function()
+	local AntiStun
+	
+	local function LocalAdded(char)
+		AntiStun:Clean(char.RootPart.AttributeChanged:Connect(function(key)
+			if (key == 'SNoJump' or key == 'SSlow') and char.RootPart:GetAttribute(key) then
+				char.RootPart:SetAttribute(key, nil)
+			end
+		end))
+	
+		char.RootPart:SetAttribute('SNoJump', nil)
+		char.RootPart:SetAttribute('SSlow', nil)
+	end
+	
+	AntiStun = vape.Categories.Blatant:CreateModule({
+		Name = 'AntiStun',
+		Function = function(callback)
+			if callback then
+				AntiStun:Clean(entitylib.Events.LocalAdded:Connect(LocalAdded))
+				if entitylib.isAlive then
+					LocalAdded(entitylib.character)
+				end
+			end
+		end,
+		Tooltip = 'Prevent snap traps from freezing you.'
 	})
 end)
 
@@ -1183,16 +1718,33 @@ run(function()
 end)
 
 run(function()
-	vape.Categories.Blatant:CreateModule({
+	local NoSlowdown
+	local whitelist = {
+		Charge = true,
+		Use = true,
+		Block = true,
+		Reload = true,
+		Aim = true
+	}
+	
+	NoSlowdown = vape.Categories.Blatant:CreateModule({
 		Name = 'NoSlowdown',
 		Function = function(callback)
 			if callback then
-				old = hookfunction(tribes.SetSpeed, function() end)
-				table.clear(tribes.State.speed)
-			else
-				if old then
-					restorefunction(tribes.SetSpeed)
+				local inputs = setmetatable({}, {__mode = 'v'})
+				for _, input in lplr.TribesInputs:GetChildren() do
+					if input:IsA('InputAction') and input.Type == Enum.InputActionType.Bool and whitelist[input.Name] then
+						table.insert(inputs, input)
+					end
 				end
+	
+				NoSlowdown:Clean(runService.PreSimulation:Connect(function()
+					for _, input in inputs do
+						if input:GetState() then
+							input:Fire(false)
+						end
+					end
+				end))
 			end
 		end,
 		Tooltip = 'Prevents slowing down when using items.'
@@ -1260,6 +1812,47 @@ run(function()
 	})
 	ZToggle = SpinBot:CreateToggle({
 		Name = 'Spin Z'
+	})
+end)
+
+run(function()
+	local old
+	local cmp = lplr.PlayerScripts.Combat.Handlers.Melee:GetFullName()
+	
+	local function Hook(...)
+		hideStack()
+	
+		local n, s = getCaller()
+		if not (argCheck({{'table'}}, ...) and n == 'Swing' and s == cmp) then
+			return old(...)
+		end
+	
+		local self = ...
+		if getrawmetatable(self) == tribes.Melee and self == tribes.State.handler and type(rawget(self, 'lastSwing')) == 'number' then
+			task.defer(function()
+				local cooldown = safeget(self, 'preset', 'hitDelay')
+				rawset(self, 'lastSwing', rawget(self, 'lastSwing') - (type(cooldown) == 'number' and cooldown or 0.1))
+			end)
+		end
+	
+		return old(...)
+	end
+	
+	SwingSpeed = vape.Categories.Blatant:CreateModule({
+		Name = 'SwingSpeed',
+		Function = function(callback)
+			if callback then
+				old = hookfunction(rawget(tribes.Melee, 'OneHanded'), function(...)
+					return Hook(...)
+				end)
+			else
+				if old then
+					restorefunction(rawget(tribes.Melee, 'OneHanded'))
+					old = nil
+				end
+			end
+		end,
+		Tooltip = 'Reduce swing cooldown by the max hit delay'
 	})
 end)
 
@@ -1377,7 +1970,18 @@ run(function()
 						Icon.Size = UDim2.fromOffset(30, 30)
 						Icon.Parent = workspace
 	
-						tribes.WeaponIcon(Icon, {id = item, opts = {glow = false, outline = false}})
+						if setstackhidden then
+							local ffunctions = {debug.info(1, 'f'), debug.info(2, 'f'), debug.info(3, 'f'), debug.info(4, 'f'), debug.info(5, 'f')}
+							for _, func in ffunctions do
+								if isexecutorclosure(func) and setstackhidden then
+									setstackhidden(func, true)
+								end
+							end
+	
+							table.clear(ffunctions)
+							tribes.WeaponIcon(Icon, {id = item, opts = {glow = false, outline = false}})
+						end
+	
 						task.defer(function()
 							Icon.Parent = holder
 						end)
@@ -1800,6 +2404,30 @@ run(function()
 end)
 
 run(function()
+	local NoSmoke
+	
+	NoSmoke = vape.Categories.Render:CreateModule({
+		Name = 'NoSmoke',
+		Function = function(callback)
+			if callback then
+				NoSmoke:Clean(workspace.FX.ChildAdded:Connect(function(obj)
+					if obj.Name == 'PuffFX' then
+						obj:Destroy()
+					end
+				end))
+	
+				for _, obj in workspace.FX:GetChildren() do
+					if obj.Name == 'PuffFX' then
+						obj:Destroy()
+					end
+				end
+			end
+		end,
+		Tooltip = 'Prevent smoke bombs from rendering.'
+	})
+end)
+
+run(function()
 	local TrapESP
 	local FillColor
 	local OutlineColor
@@ -1900,22 +2528,23 @@ run(function()
 		Name = 'AutoQueue',
 		Function = function(callback)
 			if callback then
-				dumpInput()
-	
 				AutoQueue:Clean(vapeEvents.MatchEnded.Event:Connect(function()
-					if Notification.Enabled and Delay.Value > 0 then
-						notif('AutoQueue', 'Playing again in '..string.format('%.1f', Delay.Value)..' seconds!', Delay.Value)
-					end
-	
-					task.delay(Delay.Value, function()
+					repeat
 						local button = lplr.PlayerGui:FindFirstChild('TR_Menus')
-						button = button and button:FindFirstChild('MatchEnd', true) or nil
-						button = button and button:FindFirstChild('PlayAgain', true) or nil
+						local holder = button and button:FindFirstChild('MatchEnd', true) or nil
+						button = holder and holder:FindFirstChild('PlayAgain', true) or nil
 	
-						if button and button:IsA('TextButton') and realInput then
-							firesignal(button.Activated, realInput, 0)
+						if button and button:IsA('TextButton') and button.Visible and holder.Visible and canClickButton(button) then
+							AutoQueue:Clean(task.delay(Delay.Value, clickButton, button))
+							if Notification.Enabled and Delay.Value > 0 then
+								notif('AutoQueue', 'Playing again in '..string.format('%.1f', Delay.Value)..' seconds!', Delay.Value)
+							end
+	
+							break
 						end
-					end)
+	
+						task.wait(0.05)
+					until not AutoQueue.Enabled
 				end))
 			end
 		end,
@@ -2024,22 +2653,43 @@ end)
 
 run(function()
 	local AutoSkip
+	local RankUp
+	local Drops
+	local Replay
 	
 	AutoSkip = vape.Categories.Inventory:CreateModule({
 		Name = 'AutoSkip',
 		Function = function(callback)
 			if callback then
-				dumpInput()
 				repeat
-					local bind = contextActionService:GetBoundActionInfo('TR_RevealKeys')
-					if bind.priorityLevel == 3050 then
-						local reveal = lplr.PlayerGui:FindFirstChild('TR_Reveal')
-						local button1 = reveal and reveal:FindFirstChild('Skip', true) or nil
-						local button2 = reveal and reveal:FindFirstChild('Continue', true) or nil
+					local bind = contextActionService:GetBoundActionInfo('TR_RankUpKeys')
+					if bind.priorityLevel and RankUp.Enabled then
+						local rankupgui = lplr.PlayerGui:FindFirstChild('TR_RankUp')
+						local button = rankupgui and rankupgui:FindFirstChild('Continue', true) or nil
 	
-						if button1 and button1:IsA('TextButton') and button2 and button2:IsA('TextButton') and realInput then
-							firesignal(button1.Activated, realInput, 0)
-							firesignal(button2.Activated, realInput, 0)
+						if button and button:IsA('TextButton') then
+							clickButton(button)
+						end
+					else
+						local reveal = lplr.PlayerGui:FindFirstChild('TR_Reveal')
+						reveal = reveal and reveal.Enabled and reveal:FindFirstChild('Canvas') or nil
+						reveal = reveal and reveal.Visible and reveal:FindFirstChild('Reveal') or nil
+	
+						if Drops.Enabled and reveal and reveal.Visible then
+							local button1 = reveal and reveal:FindFirstChild('Skip', true) or nil
+							local button2 = reveal and reveal:FindFirstChild('Continue', true) or nil
+	
+							if button1 and button1:IsA('TextButton') and button2 and button2:IsA('TextButton') then
+								clickButton(button1)
+								clickButton(button2)
+							end
+						elseif Replay.Enabled then
+							local replayhud = lplr.PlayerGui:FindFirstChild('TR_ReplayHud')
+							local button = replayhud and replayhud:FindFirstChild('Skip', true) or nil
+	
+							if button and button:IsA('TextButton') and button.Visible and replayhud.Enabled then
+								clickButton(button)
+							end
 						end
 					end
 	
@@ -2047,7 +2697,19 @@ run(function()
 				until not AutoSkip.Enabled
 			end
 		end,
-		Tooltip = 'Automatically skip through all crate popups'
+		Tooltip = 'Automatically skip through all possible popups'
+	})
+	RankUp = AutoSkip:CreateToggle({
+		Name = 'Rank Up',
+		Default = true
+	})
+	Drops = AutoSkip:CreateToggle({
+		Name = 'Crate Drops',
+		Default = true
+	})
+	Replay = AutoSkip:CreateToggle({
+		Name = 'Replay',
+		Default = true
 	})
 end)
 
@@ -2058,8 +2720,6 @@ run(function()
 		Name = 'AutoUpgrade',
 		Function = function(callback)
 			if callback then
-				dumpInput()
-	
 				repeat
 					local gui = lplr.PlayerGui:FindFirstChild('TR_Menus')
 					gui = gui and gui:FindFirstChild('Collection', true) or nil
@@ -2072,8 +2732,8 @@ run(function()
 								if button:IsA('TextButton') then
 									local upgrade = button:FindFirstChild('Upgrade', true)
 	
-									if upgrade and upgrade:IsA('TextButton') and upgrade.Visible and realInput then
-										firesignal(upgrade.Activated, realInput, 0)
+									if upgrade and upgrade:IsA('TextButton') and upgrade.Visible then
+										clickButton(upgrade)
 										break
 									end
 								end

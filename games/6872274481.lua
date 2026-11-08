@@ -916,6 +916,7 @@ run(function()
 			Tooltip = 'Remove the CPS cap'
 		})
 	end
+	
 end)
 
 run(function()
@@ -943,6 +944,7 @@ run(function()
 			end
 		})
 	end
+	
 end)
 
 run(function()
@@ -1327,6 +1329,7 @@ run(function()
 			Suffix = 'seconds'
 		})
 	end
+	
 end)
 
 local Fly
@@ -1579,6 +1582,7 @@ run(function()
 			Tooltip = 'Lets you sprint with a speed potion.'
 		})
 	end
+	
 end)
 
 local Attacking
@@ -2542,6 +2546,7 @@ run(function()
 			Default = true
 		})
 	end
+	
 end)
 
 run(function()
@@ -4527,6 +4532,38 @@ run(function()
 				label = nil
 			end
 		end
+	})
+end)
+
+run(function()
+	local ShopTierBypass
+	local tiered, nexttier = {}, {}
+	
+	ShopTierBypass = vape.Categories.Utility:CreateModule({
+		Name = 'ShopTierBypass',
+		Function = function(callback)
+			if callback then
+				repeat task.wait() until store.shopLoaded or not ShopTierBypass.Enabled
+				if ShopTierBypass.Enabled then
+					for _, v in bedwars.Shop.ShopItems do
+						tiered[v] = v.tiered
+						nexttier[v] = v.nextTier
+						v.nextTier = nil
+						v.tiered = nil
+					end
+				end
+			else
+				for i, v in tiered do
+					i.tiered = v
+				end
+				for i, v in nexttier do
+					i.nextTier = v
+				end
+				table.clear(nexttier)
+				table.clear(tiered)
+			end
+		end,
+		Tooltip = 'Lets you buy things like armor early.'
 	})
 end)
 
@@ -7139,6 +7176,7 @@ run(function()
 			end
 		})
 	end
+	
 end)
 
 run(function()
@@ -7252,6 +7290,7 @@ run(function()
 			Default = true
 		})
 	end
+	
 end)
 
 run(function()
@@ -7304,6 +7343,7 @@ run(function()
 			Tooltip = 'Changes the raycast function to the correct one'
 		})
 	end
+	
 end)
 
 run(function()
@@ -7397,6 +7437,7 @@ run(function()
 			end
 		})
 	end
+	
 end)
 
 run(function()
@@ -8015,6 +8056,7 @@ run(function()
 			Default = true
 		})
 	end
+	
 end)
 
 run(function()

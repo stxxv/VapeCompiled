@@ -125,19 +125,31 @@ local function isTarget(plr)
 end
 
 local function canClick()
-	local mousepos = (inputService:GetMouseLocation() - guiService:GetGuiInset())
-	for _, v in lplr.PlayerGui:GetGuiObjectsAtPosition(mousepos.X, mousepos.Y) do
-		local obj = v:FindFirstAncestorOfClass('ScreenGui')
-		if v.Active and v.Visible and obj and obj.Enabled then
+	local pos = (inputService:GetMouseLocation() - guiService:GetGuiInset())
+
+	if gethui and gethui():IsA('BasePlayerGui') then
+		for _, obj in gethui():GetGuiObjectsAtPosition(pos.X, pos.Y) do
+			local holder = obj:FindFirstAncestorOfClass('ScreenGui')
+			if obj.Active and obj.Visible and holder and holder.Enabled then
+				return false
+			end
+		end
+	end
+
+	for _, obj in coreGui:GetGuiObjectsAtPosition(pos.X, pos.Y) do
+		local holder = obj:FindFirstAncestorOfClass('ScreenGui')
+		if obj.Active and obj.Visible and holder and holder.Enabled then
 			return false
 		end
 	end
-	for _, v in coreGui:GetGuiObjectsAtPosition(mousepos.X, mousepos.Y) do
-		local obj = v:FindFirstAncestorOfClass('ScreenGui')
-		if v.Active and v.Visible and obj and obj.Enabled then
+
+	for _, obj in lplr.PlayerGui:GetGuiObjectsAtPosition(pos.X, pos.Y) do
+		local holder = obj:FindFirstAncestorOfClass('ScreenGui')
+		if obj.Active and obj.Visible and holder and holder.Enabled then
 			return false
 		end
 	end
+
 	return (not vape.gui.ScaledGui.ClickGui.Visible) and (not inputService:GetFocusedTextBox())
 end
 
@@ -946,6 +958,7 @@ entitylib.start()
 run(function()
 	local AimAssist
 	local Targets
+	local Mode
 	local Part
 	local FOV
 	local Speed
@@ -960,10 +973,7 @@ run(function()
 	local moveConst = Vector2.new(1, 0.77) * math.rad(0.5)
 	
 	local function wrapAngle(num)
-		num = num % math.pi
-		num -= num >= (math.pi / 2) and math.pi or 0
-		num += num < -(math.pi / 2) and math.pi or 0
-		return num
+		return (num + math.pi % math.tau) - math.pi
 	end
 	
 	AimAssist = vape.Categories.Combat:CreateModule({
@@ -992,19 +1002,18 @@ run(function()
 							return
 						end
 	
-						entity = entitylib.EntityMouse({
+						entity = entitylib['Entity'..Mode.Value]({
 							Range = FOV.Value,
 							Part = Part.Value,
 							Players = Targets.Players.Enabled,
 							NPCs = Targets.NPCs.Enabled,
 							Wallcheck = Targets.Walls.Enabled,
-							Origin = gameCamera.CFrame.Position
+							Origin = Mode.Value == 'Mouse' and gameCamera.CFrame.Position or nil
 						})
 	
 						if entity then
 							local facing = gameCamera.CFrame.LookVector
-							local new = (entity[Part.Value].Position - gameCamera.CFrame.Position).Unit
-							new = new == new and new or Vector3.zero
+							local new = CFrame.lookAt(gameCamera.CFrame.Position, entity[Part.Value].Position).LookVector
 	
 							if ShowTarget.Enabled then
 								targetinfo.Targets[entity] = os.clock() + 1
@@ -1041,7 +1050,13 @@ run(function()
 		end,
 		Tooltip = 'Smoothly aims to closest valid target'
 	})
-	Targets = AimAssist:CreateTargets({Players = true})
+	Targets = AimAssist:CreateTargets({
+		Players = true
+	})
+	Mode = AimAssist:CreateDropdown({
+		Name = 'Mode',
+		List = {'Mouse', 'Position'}
+	})
 	Part = AimAssist:CreateDropdown({
 		Name = 'Part',
 		List = {'RootPart', 'Head'}
@@ -1170,7 +1185,7 @@ run(function()
 				until not AutoClicker.Enabled
 			end
 		end,
-		Tooltip = 'Automatically clicks for you'
+		Tooltip = 'Automatically clicks for you.'
 	})
 	Mode = AutoClicker:CreateDropdown({
 		Name = 'Mode',
@@ -1283,6 +1298,7 @@ run(function()
 	local Mode
 	local Method
 	local RayMethod
+	local SchedulerPriority
 	local IgnoredScripts
 	local Range
 	local HitChance
@@ -1308,8 +1324,8 @@ run(function()
 	local oldnamecall, oldhook, hookmethod
 	local rand = Random.new()
 	local clickDelay = os.clock()
+	local fireOffset = CFrame.new()
 	local didOth
-	local fireOffset
 
 	local function getMousePosition()
 		if inputService.TouchEnabled then
@@ -1489,44 +1505,67 @@ run(function()
 			end
 
 			if callback then
-				hookmethod = Hooks[Method.Value]
-				didOth = OthHook.Enabled
-
-				if FunctionHook.Enabled or hookmethod.NoNamecall then
-					oldhook = (OthHook.Enabled and oth.hook or hookfunction)(hookmethod.Hook, function(...)
-						if checkcaller() then
-							return oldhook(...)
+				if Method.Value == 'TaskScheduler' then
+					local old
+					SilentAim:Clean(runService.PostSimulation:Connect(function()
+						local entity, targetPart = getTarget(gameCamera.CFrame.Position)
+						if entity then
+							old = gameCamera.CFrame
+							gameCamera.CFrame = CFrame.lookAt(gameCamera.CFrame.Position, targetPart.Position)
 						end
+					end))
 
-						local caller = getcallingscript()
-						if typeof(caller) == 'Instance' and caller then
-							if table.find(IgnoredScripts.ListEnabled, tostring(caller)) then
-								return oldnamecall(...)
-							end
-						end
-
-						if hookmethod.NoNamecall then
-							local args = {...}
-							local data = hookmethod.Function(args)
-							if data then
-								return unpack(data)
-							end
-
-							return oldhook(unpack(args))
-						else
-							local self, args = ..., {select(2, ...)}
-							local data = hookmethod.Function(args)
-							if data then
-								return unpack(data)
-							end
-
-							return oldhook(self, unpack(args))
+					local key = httpService:GenerateGUID(false)
+					runService:BindToRenderStep(key, SchedulerPriority.Value, function()
+						if old then
+							gameCamera.CFrame = old
+							old = nil
 						end
 					end)
-				end
 
-				if not hookmethod.NoNamecall then
-					oldnamecall = OthHook.Enabled and oth.hook(getrawmetatable(game).__namecall, namecallHook) or hookmetamethod(game, '__namecall', namecallHook)
+					SilentAim:Clean(function()
+						runService:UnbindFromRenderStep(key)
+					end)
+				else
+					hookmethod = Hooks[Method.Value]
+					didOth = OthHook.Enabled
+
+					if FunctionHook.Enabled or hookmethod.NoNamecall then
+						oldhook = (OthHook.Enabled and oth.hook or hookfunction)(hookmethod.Hook, function(...)
+							if checkcaller() then
+								return oldhook(...)
+							end
+
+							local caller = getcallingscript()
+							if typeof(caller) == 'Instance' and caller then
+								if table.find(IgnoredScripts.ListEnabled, tostring(caller)) then
+									return oldnamecall(...)
+								end
+							end
+
+							if hookmethod.NoNamecall then
+								local args = {...}
+								local data = hookmethod.Function(args)
+								if data then
+									return unpack(data)
+								end
+
+								return oldhook(unpack(args))
+							else
+								local self, args = ..., {select(2, ...)}
+								local data = hookmethod.Function(args)
+								if data then
+									return unpack(data)
+								end
+
+								return oldhook(self, unpack(args))
+							end
+						end)
+					end
+
+					if not hookmethod.NoNamecall then
+						oldnamecall = OthHook.Enabled and oth.hook(getrawmetatable(game).__namecall, namecallHook) or hookmetamethod(game, '__namecall', namecallHook)
+					end
 				end
 			else
 				if oldhook then
@@ -1601,7 +1640,7 @@ run(function()
 	})
 	Method = SilentAim:CreateDropdown({
 		Name = 'Method',
-		List = {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'},
+		List = {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray', 'TaskScheduler'},
 		Function = function(val)
 			if SilentAim.Enabled then
 				SilentAim:Toggle()
@@ -1609,6 +1648,8 @@ run(function()
 			end
 
 			RayMethod.Object.Visible = val == 'Raycast'
+			IgnoredScripts.Object.Visible = val ~= 'TaskScheduler'
+			SchedulerPriority.Object.Visible = val == 'TaskScheduler'
 		end,
 		Tooltip = 'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\n*PointToRay - Method to generate a ray from a screen position\nRay - Used in old games'
 	})
@@ -1649,6 +1690,21 @@ run(function()
 		Max = 100,
 		Default = 65,
 		Suffix = '%'
+	})
+	SchedulerPriority = SilentAim:CreateSlider({
+		Name = 'Scheduler Priority',
+		Min = -5,
+		Max = 5,
+		Default = 0,
+		Function = function()
+			if SilentAim.Enabled then
+				SilentAim:Toggle()
+				SilentAim:Toggle()
+			end
+		end,
+		Darker = true,
+		Visible = false,
+		Tooltip = 'Adjust the RenderStepped priority for TaskScheduler, only adjust this if you know what you are doing!'
 	})
 	AutoFire = SilentAim:CreateToggle({
 		Name = 'AutoFire',
@@ -2448,7 +2504,7 @@ run(function()
 		ExtraText = function()
 			return Mode.Value
 		end,
-		Tooltip = 'Lets you jump higher'
+		Tooltip = 'Lets you jump higher.'
 	})
 	Mode = HighJump:CreateDropdown({
 		Name = 'Mode',
@@ -2596,7 +2652,7 @@ run(function()
 				end
 			end
 		end,
-		Tooltip = 'Turns you invisible.'
+		Tooltip = 'Turns you invisible using animations.'
 	})
 end)
 
@@ -2983,7 +3039,7 @@ run(function()
 		ExtraText = function()
 			return Mode.Value
 		end,
-		Tooltip = 'Lets you jump farther'
+		Tooltip = 'Lets you jump farther.'
 	})
 	Mode = LongJump:CreateDropdown({
 		Name = 'Mode',
@@ -3250,7 +3306,7 @@ run(function()
 				fflag = nil
 			end
 		end,
-		Tooltip = 'Lets you Phase/Clip through walls. (Hold shift to use Phase over spider)'
+		Tooltip = 'Phase/Clip through walls. (Hold Left Shift to use Phase over Spider)'
 	})
 	Mode = Phase:CreateDropdown({
 		Name = 'Mode',
@@ -3520,7 +3576,7 @@ run(function()
 				SpiderShift = false
 			end
 		end,
-		Tooltip = 'Lets you climb up walls. (Hold shift to use Phase over spider)'
+		Tooltip = 'Lets you climb up obstacles. (Hold Left Shift to use Phase over Spider)'
 	})
 	Mode = Spider:CreateDropdown({
 		Name = 'Mode',
@@ -3606,7 +3662,7 @@ run(function()
 				end
 			end
 		end,
-		Tooltip = 'Makes your character spin around in circles (does not work in first person)'
+		Tooltip = 'Automatically spins your character around in circles. (Does not work in first person)'
 	})
 	Mode = SpinBot:CreateDropdown({
 		Name = 'Mode',
@@ -3642,7 +3698,7 @@ end)
 run(function()
 	local Swim
 	local terrain = cloneref(workspace:FindFirstChildWhichIsA('Terrain'))
-	local lastpos = Region3.new(Vector3.zero, Vector3.zero)
+	local lastpos
 	
 	Swim = vape.Categories.Blatant:CreateModule({
 		Name = 'Swim',
@@ -3659,7 +3715,10 @@ run(function()
 							local factor = (moving or space) and Vector3.new(6, 6, 6) or Vector3.new(2, 1, 2)
 							local pos = root.Position - Vector3.new(0, 1, 0)
 							local newpos = Region3.new(pos - factor, pos + factor):ExpandToGrid(4)
-							terrain:ReplaceMaterial(lastpos, 4, Enum.Material.Water, Enum.Material.Air)
+							if lastpos then
+								terrain:ReplaceMaterial(lastpos, 4, Enum.Material.Water, Enum.Material.Air)
+							end
+	
 							terrain:ReplaceMaterial(newpos, 4, Enum.Material.Air, Enum.Material.Water)
 							lastpos = newpos
 						end
@@ -3668,10 +3727,11 @@ run(function()
 			else
 				if terrain and lastpos then
 					terrain:ReplaceMaterial(lastpos, 4, Enum.Material.Water, Enum.Material.Air)
+					lastpos = nil
 				end
 			end
 		end,
-		Tooltip = 'Lets you swim midair'
+		Tooltip = 'Lets you swim midair.'
 	})
 end)
 
@@ -3763,7 +3823,7 @@ run(function()
 				TargetStrafeVector = nil
 			end
 		end,
-		Tooltip = 'Automatically strafes around the opponent'
+		Tooltip = 'Automatically strafes around nearby entities.'
 	})
 	Targets = TargetStrafe:CreateTargets({
 		Players = true,
@@ -3813,7 +3873,7 @@ run(function()
 				end))
 			end
 		end,
-		Tooltip = 'Change the game speed.'
+		Tooltip = 'Modifies game timer'
 	})
 	Value = Timer:CreateSlider({
 		Name = 'Value',
@@ -4139,7 +4199,7 @@ run(function()
 				table.clear(Threads)
 			end
 		end,
-		Tooltip = 'Render players through walls'
+		Tooltip = 'Render players through walls.'
 	})
 	Targets = Chams:CreateTargets({
 		Players = true,
@@ -5112,30 +5172,81 @@ end)
 
 run(function()
 	local Health
+	local Size
+	local Stroke
+	local Offset
+	local FontOption
+	local label
 	
 	Health = vape.Categories.Render:CreateModule({
 		Name = 'Health',
 		Function = function(callback)
 			if callback then
-				local label = Instance.new('TextLabel')
+				label = Instance.new('TextLabel')
 				label.Size = UDim2.fromOffset(100, 20)
-				label.Position = UDim2.new(0.5, 6, 0.5, 30)
+				label.Position = UDim2.new(0.5, 6, 0.5, Offset.Value)
 				label.AnchorPoint = Vector2.new(0.5, 0)
 				label.BackgroundTransparency = 1
 				label.Text = '100 ❤️'
-				label.TextSize = 18
-				label.Font = Enum.Font.Arial
+				label.TextSize = Size.Value
+				label.TextStrokeTransparency = Stroke.Value
+				label.FontFace = FontOption.Value
 				label.Parent = vape.gui
 				Health:Clean(label)
-				
+	
 				repeat
 					label.Text = entitylib.isAlive and math.round(entitylib.character.Humanoid.Health)..' ❤️' or ''
 					label.TextColor3 = entitylib.isAlive and Color3.fromHSV((entitylib.character.Humanoid.Health / entitylib.character.Humanoid.MaxHealth) / 2.8, 0.86, 1) or Color3.new()
 					task.wait()
 				until not Health.Enabled
+			else
+				label = nil
 			end
 		end,
 		Tooltip = 'Displays your health in the center of your screen.'
+	})
+	FontOption = Health:CreateFont({
+		Name = 'Font',
+		Blacklist = 'Arial',
+		Function = function(value)
+			if label then
+				label.FontFace =value
+			end
+		end
+	})
+	Size = Health:CreateSlider({
+		Name = 'Size',
+		Min = 1,
+		Max = 30,
+		Default = 18,
+		Function = function(value)
+			if label then
+				label.TextSize = value
+			end
+		end
+	})
+	Stroke = Health:CreateSlider({
+		Name = 'Stroke Transparency',
+		Function = function(value)
+			if label then
+				label.TextStrokeTransparency = value
+			end
+		end,
+		Default = 1,
+		Min = 0,
+		Max = 1,
+		Decimal = 10
+	})
+	Offset = Health:CreateSlider({
+		Name = 'Y Offset',
+		Min = 0,
+		Max = 100,
+		Default = 30,
+		Function = function(value)
+			if label then
+				label.Position = UDim2.new(0.5, 6, 0.5, value)
+			end
+		end
 	})
 end)
 
@@ -5152,6 +5263,7 @@ run(function()
 	local Scale
 	local FontOption
 	local Teammates
+	local FriendBorder
 	local DistanceCheck
 	local DistanceLimit
 	local Strings, Sizes, Reference = {}, {}, {}
@@ -5195,6 +5307,12 @@ run(function()
 			nametag.TextColor3 = entitylib.getEntityColor(entity) or Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
 			nametag.RichText = true
 			nametag.Parent = Folder
+	
+			if FriendBorder.Enabled and not entity.Targetable then
+				nametag.BorderSizePixel = 2
+				nametag.BorderColor3 = Color3.new(0, 1, 0)
+			end
+	
 			Reference[entity] = nametag
 		end,
 		Drawing = function(entity)
@@ -5540,6 +5658,16 @@ run(function()
 		Default = true,
 		Tooltip = 'Hides teammates & non targetable entities'
 	})
+	FriendBorder = NameTags:CreateToggle({
+		Name = 'Friendly Border',
+		Function = function()
+			if NameTags.Enabled then
+				NameTags:Toggle()
+				NameTags:Toggle()
+			end
+		end,
+		Tooltip = 'Apply an outline over the entire nametag signaling a friendly entity.'
+	})
 	DrawingToggle = NameTags:CreateToggle({
 		Name = 'Drawing',
 		Function = function()
@@ -5573,6 +5701,7 @@ run(function()
 	local Mesh
 	local Texture
 	local Hide
+	local Offsets = {}
 	local Rots = {}
 	local models = {}
 	
@@ -5590,7 +5719,7 @@ run(function()
 		local root = entity.RootPart
 		local part = Instance.new('Part')
 		part.Size = Vector3.new(3, 3, 3)
-		part.CFrame = root.CFrame * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
+		part.CFrame = root.CFrame * CFrame.new(Offsets[1].Value, Offsets[2].Value, Offsets[3].Value) * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
 		part.CanCollide = false
 		part.CanQuery = false
 		part.Massless = true
@@ -5664,6 +5793,22 @@ run(function()
 			end
 		end
 	})
+	for _, name in {'Offset X', 'Offset Y', 'Offset Z'} do
+		table.insert(Offsets, PlayerModel:CreateSlider({
+			Name = name,
+			Min = -2,
+			Max = 2,
+			Default = 0,
+			Decimal = 10,
+			Function = function(val)
+				for root, part in models do
+					part.WeldConstraint.Enabled = false
+					part.CFrame = root.CFrame * CFrame.new(Offsets[1].Value, Offsets[2].Value, Offsets[3].Value) * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
+					part.WeldConstraint.Enabled = true
+				end
+			end
+		}))
+	end
 	for _, name in {'Rotation X', 'Rotation Y', 'Rotation Z'} do
 		table.insert(Rots, PlayerModel:CreateSlider({
 			Name = name,
@@ -5672,7 +5817,7 @@ run(function()
 			Function = function(val)
 				for root, part in models do
 					part.WeldConstraint.Enabled = false
-					part.CFrame = root.CFrame * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
+					part.CFrame = root.CFrame * CFrame.new(Offsets[1].Value, Offsets[2].Value, Offsets[3].Value) * CFrame.Angles(math.rad(Rots[1].Value), math.rad(Rots[2].Value), math.rad(Rots[3].Value))
 					part.WeldConstraint.Enabled = true
 				end
 			end
@@ -6412,12 +6557,12 @@ run(function()
 				local diff = currentTime - (tonumber(data.player_state.timestamp) / 1000)
 				self.playPosition = posAsTime + (data.player_state.is_paused and 0 or diff)
 				self.playRate = data.player_state.playback_speed
-				self.playDuration = tonumber(data.player_state.duration) / 1000
+				self.playDuration = tonumber(data.player_state.duration or 1000) / 1000
 	
 				if data.player_state.track then
-					self:RequestCache(data.player_state.track.uri)
+					self:RequestCache(data.player_state.track.uri, data.player_state.track)
 					self.track = data.player_state.track.uri
-					title.Text = data.player_state.track.metadata.title
+					title.Text = data.player_state.track.metadata.title or self.Cache[self.track].Title
 					artist.Text = table.concat(self.Cache[self.track].Artists, ', ')
 				end
 			end
@@ -6516,11 +6661,18 @@ run(function()
 			end
 		end
 	
-		function SpotifyHandler:RequestCache(id)
+		function SpotifyHandler:RequestCache(id, data)
 			if not self.Cache[id] then
-				self.Cache[id] = {Artists = {'None'}}
+				self.Cache[id] = {Artists = {'None'}, Title = 'Unknown'}
 	
-				if self.Data.fetchKey and not id:find('spotify:local') then
+				if id:find('spotify:local') then
+					local lArtist = data.metadata.artist_uri:sub(15)
+					self.Cache[id].Artists = {lArtist ~= '' and lArtist or 'None'}
+					artist.Text = table.concat(self.Cache[id].Artists, ', ')
+					return
+				end
+	
+				if self.Data.fetchKey then
 					task.spawn(function()
 						local dataRequest = safeRequest({
 							Url = 'https://api-partner.spotify.com/pathfinder/v2/query',
@@ -6556,6 +6708,7 @@ run(function()
 								table.clear(self.Cache[id].Artists)
 	
 								if track.data.__typename == 'Track' then
+									self.Cache[id].Title = track.data.name
 									for _, artist in track.data.artists.items do
 										table.insert(self.Cache[id].Artists, artist.profile.name)
 									end
@@ -6564,6 +6717,7 @@ run(function()
 								end
 	
 								if self.track == id then
+									title.Text = self.Cache[id].Title
 									artist.Text = table.concat(self.Cache[id].Artists, ', ')
 								end
 							end
@@ -6619,15 +6773,15 @@ run(function()
 							metadata = {},
 							model = 'web_player',
 							name = 'Web Player (Firefox)',
-							platform_identifier = 'web_player windows 10;firefox 154.0;desktop',
+							platform_identifier = 'web_player windows 10;firefox 158.0;desktop',
 							is_group = false,
 							is_public = false,
 							correlation_id = self.Data.correlationId,
-							client_version = 'harmony:4.78.0-f1c77f179'
+							client_version = 'harmony:4.81.1-1f3d48b7f'
 						},
 						outro_endcontent_snooping = false,
 						connection_id = self.connectionId,
-						client_version = 'harmony:4.78.0-f1c77f179',
+						client_version = 'harmony:4.81.1-1f3d48b7f',
 						volume = 65535
 					}):gsub('"metadata":%[%]', '"metadata":{}')
 				})
@@ -6736,7 +6890,7 @@ run(function()
 	
 			self.Headers = {
 				Cookie = 'sp_dc='..readfile('newvape/profiles/spotify.txt')..';',
-				['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0'
+				['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0'
 			}
 	
 			local data = isfile('newvape/profiles/spotifydata.txt') and httpService:JSONDecode(readfile('newvape/profiles/spotifydata.txt')) or {expireTime = 0}
@@ -7284,15 +7438,70 @@ end)
 run(function()
 	local Blink
 	local Type
+	local Fake
 	local AutoSend
 	local AutoSendLength
+	local Folder = Instance.new('Folder')
+	Folder.Parent = vape.holder
 	local oldphys, oldsend
+	local boxes = {}
+	local whitelist = {
+		Head = true,
+		Torso = true,
+		UpperTorso = true,
+		LowerTorso = true,
+		['Left Arm'] = true,
+		['Right Arm'] = true,
+		['Left Leg'] = true,
+		['Right Leg'] = true,
+		LeftUpperArm = true,
+		RightUpperArm = true,
+		LeftLowerArm = true,
+		RightLowerArm = true,
+		LeftHand = true,
+		RightHand = true,
+		LeftUpperLeg = true,
+		RightUpperLeg = true,
+		LeftLowerLeg = true,
+		RightLowerLeg = true,
+		LeftFoot = true,
+		RightFoot = true
+	}
+	
+	local function updateBoxes()
+		if Blink.Enabled and Fake.Enabled and entitylib.isAlive then
+			for _, part in entitylib.character.Character:GetChildren() do
+				if part:IsA('BasePart') and whitelist[part.Name] then
+					if not boxes[part.Name] then
+						local box = Instance.new(part.Name == 'Head' and 'SphereHandleAdornment' or 'BoxHandleAdornment')
+						if part.Name == 'Head' then
+							box.Radius = 0.75
+						else
+							box.Size = part.Size
+						end
+	
+						box.AlwaysOnTop = true
+						box.Adornee = workspace
+						box.ZIndex = 10
+						box.Transparency = 0.5
+						box.Parent = Folder
+						boxes[part.Name] = box
+					end
+	
+					local box = boxes[part.Name]
+					box.CFrame = workspace:GetModelCFrame():ToObjectSpace(part.CFrame)
+				end
+			end
+		end
+	end
 	
 	Blink = vape.Categories.Utility:CreateModule({
 		Name = 'Blink',
 		Function = function(callback)
 			if callback then
+				updateBoxes()
 				local teleported
+				local timetaken = os.clock()
 				Blink:Clean(lplr.OnTeleport:Connect(function()
 					setfflag('PhysicsSenderMaxBandwidthBps', '38760')
 					setfflag('DataSenderRate', '60')
@@ -7301,8 +7510,10 @@ run(function()
 	
 				repeat
 					local physicsrate, senderrate = '0', Type.Value == 'All' and '-1' or '60'
-					if AutoSend.Enabled and tick() % (AutoSendLength.Value + 0.1) > AutoSendLength.Value then
+					if AutoSend.Enabled and (os.clock() - timetaken) > AutoSendLength.Value then
+						updateBoxes()
 						physicsrate, senderrate = '38760', '60'
+						timetaken = os.clock()
 					end
 	
 					if physicsrate ~= oldphys or senderrate ~= oldsend then
@@ -7311,13 +7522,17 @@ run(function()
 						oldphys, oldsend = physicsrate, senderrate
 					end
 	
-					task.wait(0.03)
+					task.wait(physicsrate == '38760' and 0.1 or 0.03)
 				until (not Blink.Enabled and not teleported)
 			else
 				if setfflag then
 					setfflag('PhysicsSenderMaxBandwidthBps', '38760')
 					setfflag('DataSenderRate', '60')
 				end
+	
+				Folder:ClearAllChildren()
+				table.clear(boxes)
+	
 				oldphys, oldsend = nil, nil
 			end
 		end,
@@ -7328,12 +7543,17 @@ run(function()
 		List = {'Movement Only', 'All'},
 		Tooltip = 'Movement Only - Only chokes movement packets\nAll - Chokes remotes & movement'
 	})
+	Fake = Blink:CreateToggle({
+		Name = 'Spawn fake',
+		Function = updateBoxes,
+		Tooltip = 'Spawns chams from where you started/are on the servers side.'
+	})
 	AutoSend = Blink:CreateToggle({
 		Name = 'Auto send',
 		Function = function(callback)
 			AutoSendLength.Object.Visible = callback
 		end,
-		Tooltip = 'Automatically send packets in intervals'
+		Tooltip = 'Automatically sends packets after the designated time limit has passed'
 	})
 	AutoSendLength = Blink:CreateSlider({
 		Name = 'Send threshold',
@@ -7342,6 +7562,7 @@ run(function()
 		Decimal = 100,
 		Darker = true,
 		Visible = false,
+		Tooltip = 'Allows you to choke your packets for a custom set time limit.\nAfter the time limit has passed, all packets will be sent.',
 		Suffix = function(val)
 			return val == 1 and 'second' or 'seconds'
 		end
@@ -7561,10 +7782,13 @@ run(function()
 end)
 
 run(function()
-	vape.Categories.Utility:CreateModule({
+	local Panic
+	
+	Panic = vape.Categories.Utility:CreateModule({
 		Name = 'Panic',
 		Function = function(callback)
 			if callback then
+				Panic:Toggle()
 				for _, module in vape.Modules do
 					if module.Enabled then
 						module:Toggle()
@@ -8825,6 +9049,7 @@ run(function()
 	local Disguise
 	local Mode
 	local IDBox
+	local EmoteList
 	local cloned = {}
 	
 	local function itemAdded(obj, manual)
@@ -8899,7 +9124,7 @@ run(function()
 			elseif description then
 				description:Destroy()
 			end
-		else
+		elseif Mode.Value == 'Animation' then
 			local success, data = pcall(function()
 				data = marketplaceService:GetProductInfo(IDBox.Value == '' and 43 or tonumber(IDBox.Value), Enum.InfoType.Bundle)
 			end)
@@ -8927,6 +9152,19 @@ run(function()
 			elseif type(data) == 'table' then
 				table.clear(data)
 			end
+		else
+			local desc = char.Humanoid:WaitForChild('HumanoidDescription', 5)
+			if desc then
+				local emotes, equipped = {}, {}
+				for index, entry in EmoteList.ListEnabled do
+					local split = entry:split('/')
+					emotes['Emote '..tostring(index)] = {tonumber(split[2])}
+					table.insert(equipped, {Name = 'Emote '..tostring(index), Slot = tonumber(split[1]) or 1})
+				end
+	
+				desc:SetEmotes(emotes)
+				desc:SetEquippedEmotes(equipped)
+			end
 		end
 	end
 	
@@ -8946,8 +9184,10 @@ run(function()
 	})
 	Mode = Disguise:CreateDropdown({
 		Name = 'Mode',
-		List = {'Character', 'Animation'},
-		Function = function()
+		List = {'Character', 'Animation', 'Emotes'},
+		Function = function(val)
+			EmoteList.Object.Visible = val == 'Emotes'
+	
 			if Disguise.Enabled then
 				Disguise:Toggle()
 				Disguise:Toggle()
@@ -8963,6 +9203,18 @@ run(function()
 				Disguise:Toggle()
 			end
 		end
+	})
+	EmoteList = Disguise:CreateTextList({
+		Name = 'Emote List',
+		Placeholder = 'slot/emoteid',
+		Function = function()
+			if Disguise.Enabled then
+				Disguise:Toggle()
+				Disguise:Toggle()
+			end
+		end,
+		Darker = true,
+		Visible = false
 	})
 end)
 
@@ -9463,6 +9715,7 @@ end)
 run(function()
 	local TimeChanger
 	local Value
+	local Loop
 	local old
 	
 	TimeChanger = vape.Legit:CreateModule({
@@ -9471,6 +9724,12 @@ run(function()
 			if callback then
 				old = lightingService.TimeOfDay
 				lightingService.TimeOfDay = Value.Value..':00:00'
+	
+				if Loop.Enabled then
+					TimeChanger:Clean(runService.RenderStepped:Connect(function()
+						lightingService.TimeOfDay = Value.Value..':00:00'
+					end))
+				end
 			else
 				lightingService.TimeOfDay = old
 				old = nil
@@ -9486,6 +9745,15 @@ run(function()
 		Function = function(val)
 			if TimeChanger.Enabled then
 				lightingService.TimeOfDay = val..':00:00'
+			end
+		end
+	})
+	Loop = TimeChanger:CreateToggle({
+		Name = 'Loop',
+		Function = function()
+			if TimeChanger.Enabled then
+				TimeChanger:Toggle()
+				TimeChanger:Toggle()
 			end
 		end
 	})
