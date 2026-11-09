@@ -1619,6 +1619,7 @@ run(function()
 	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
 
 	local BUFFER_MULT, buffered = 0.4, {}
+	local Buffer
 	local function bufferWindow(meta)
 		local base = (meta and meta.sword) and meta.sword.attackSpeed or 0.3
 		return math.min(base * 0.4, 0.2)
@@ -1826,7 +1827,7 @@ run(function()
 												selfPosition = {value = pos}
 											}
 										})
-									elseif AttackDelay[v].Attack - os.clock() <= bufferWindow(meta) and not buffered[v] then
+									elseif Buffer.Enabled and (AttackDelay[v].Attack - os.clock() <= bufferWindow(meta) and not buffered[v]) then
 										buffered[v] = true
 										task.delay(AttackDelay[v].Attack - os.clock(), function()
 											buffered[v] = nil
@@ -1916,7 +1917,15 @@ run(function()
 	Hitreg = Killaura:CreateDropdown({
 		Name = 'Hitreg',
 		List = {'Dynamic', 'Static'},
+		Function = function(callback)
+			Buffer:Set((callback == 'Dynamic' and true) or false)
+			Buffer.Object.Visible = (callback == 'Dynamic' and true) or false
+		end
 		Tooltip = 'Dynamic - Automatically uses your ping and sword cooldown to get the best hitreg.\nStatic - Uses your sword cooldown for a consistent hitreg.'
+	})
+	Buffer = Killaura:CreateToggle({
+		Name = 'Buffer hits',
+		Tooltip = 'Allows for hits to be buffered'
 	})
 	Targets = Killaura:CreateTargets({
 		Players = true,
@@ -2155,6 +2164,7 @@ run(function()
 		Tooltip = 'Only attacks while swinging manually'
 	})
 end)
+
 
 run(function()
 	local Value
