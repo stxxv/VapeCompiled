@@ -1920,7 +1920,7 @@ run(function()
 		Function = function(callback)
 			Buffer:Set((callback == 'Dynamic' and true) or false)
 			Buffer.Object.Visible = (callback == 'Dynamic' and true) or false
-		end
+		end,
 		Tooltip = 'Dynamic - Automatically uses your ping and sword cooldown to get the best hitreg.\nStatic - Uses your sword cooldown for a consistent hitreg.'
 	})
 	Buffer = Killaura:CreateToggle({
