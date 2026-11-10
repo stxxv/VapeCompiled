@@ -6238,6 +6238,7 @@ run(function()
 			if SpeedPotion.Enabled and (not attribute or attribute == 'StatusEffect_speed') then
 				local speedpotion = getItem('speed_potion')
 				if speedpotion and (not lplr.Character:GetAttribute('StatusEffect_speed')) then
+					switchItem(speedpotion.tool, 0)
 					for _ = 1, 4 do
 						if bedwars.Client:Get(remotes.ConsumeItem):CallServer({item = speedpotion.tool}) then break end
 					end
@@ -6249,6 +6250,7 @@ run(function()
 					local apple = getItem('orange') or (not lplr.Character:GetAttribute('StatusEffect_golden_apple') and getItem('golden_apple')) or getItem('apple')
 					
 					if apple then
+						switchItem(apple.tool, 0)
 						bedwars.Client:Get(remotes.ConsumeItem):CallServerAsync({
 							item = apple.tool
 						})
@@ -6261,6 +6263,7 @@ run(function()
 					local shield = getItem('big_shield') or getItem('mini_shield')
 	
 					if shield then
+						switchItem(shield.tool, 0)
 						bedwars.Client:Get(remotes.ConsumeItem):CallServerAsync({
 							item = shield.tool
 						})
@@ -6304,6 +6307,7 @@ run(function()
 		Name = 'Shield Potions',
 		Default = true
 	})
+	
 end)
 
 run(function()
