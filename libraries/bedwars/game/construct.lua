@@ -4252,63 +4252,54 @@ end
 ]]
 
 local function calculatePath(target, blockpos)
-	local cached = cache[blockpos]
-	-- the path is only valid while the blocks it steps through are still there, and the
-	-- index only refreshes every 0.15s, so a stale entry had Breaker hammering an empty
-	-- cell until it expired
-	if cached and tick() - cached[4] < 0.3 then
-		return unpack(cached)
-	end
-	local visited, unvisited, distances, air, path = {}, { { 0, blockpos } }, { [blockpos] = 0 }, {}, {}
+            if cache[blockpos] then
+                return unpack(cache[blockpos])
+            end
+            local visited, unvisited, distances, air, path = {}, {{0, blockpos}}, {[blockpos] = 0}, {}, {}
 
-	for _ = 1, 10000 do
-		local _, node = next(unvisited)
-		if not node then
-			break
-		end
-		table.remove(unvisited, 1)
-		visited[node[2]] = true
+            for _ = 1, 10000 do
+                local _, node = next(unvisited)
+                if not node then break end
+                table.remove(unvisited, 1)
+                visited[node[2]] = true
 
-		for _, side in sides do
-			side = node[2] + side
-			if visited[side] then
-				continue
-			end
+                for _, side in sides do
+                    side = node[2] + side
+                    if visited[side] then continue end
 
-			local block = getPlacedBlock(side)
-			if not block or block:GetAttribute('NoBreak') or block == target then
-				if not block then
-					air[node[2]] = true
-				end
-				continue
-			end
+                    local block = getPlacedBlock(side)
+                    if not block or block:GetAttribute('NoBreak') or block == target then
+                        if not block then
+                            air[node[2]] = true
+                        end
+                        continue
+                    end
 
-			local curdist = getBlockHits(block, side) + node[1]
-			if curdist < (distances[side] or math.huge) then
-				table.insert(unvisited, { curdist, side })
-				distances[side] = curdist
-				path[side] = node[2]
-			end
-		end
-	end
+                    local curdist = getBlockHits(block, side) + node[1]
+                    if curdist < (distances[side] or math.huge) then
+                        table.insert(unvisited, {curdist, side})
+                        distances[side] = curdist
+                        path[side] = node[2]
+                    end
+                end
+            end
 
-	local pos, cost = nil, math.huge
-	for node in air do
-		if distances[node] < cost then
-			pos, cost = node, distances[node]
-		end
-	end
+            local pos, cost = nil, math.huge
+            for node in air do
+                if distances[node] < cost then
+                    pos, cost = node, distances[node]
+                end
+            end
 
-	if pos then
-		cache[blockpos] = {
-			pos,
-			cost,
-			path,
-			tick(),
-		}
-		return pos, cost, path
-	end
-end
+            if pos then
+                cache[blockpos] = {
+                    pos,
+                    cost,
+                    path
+                }
+                return pos, cost, path
+            end
+        end
 
 -- the server validates every placement against the mouse block it belongs to, so the
 -- mouseBlockInfo has to carry the shape the real placer builds: the block being built
@@ -4338,6 +4329,8 @@ local function buildMouseBlockInfo(gridPos)
 	end
 end
 
+local _placeBlockItemName, _placeBlockItemData = nil, nil
+
 bedwars.placeBlock = function(pos, item, mouseInfo)
 	if typeof(pos) ~= 'Vector3' then
 		return
@@ -4348,7 +4341,15 @@ bedwars.placeBlock = function(pos, item, mouseInfo)
 
 	local blockpos = roundBlockPos(pos)
 
-	local itemData = getItem(item)
+	-- scaffold places the same block repeatedly; cache the item lookup so the
+	-- inventory scan isn't repeated on every placement
+	local itemData
+	if item == _placeBlockItemName then
+		itemData = _placeBlockItemData
+	else
+		itemData = getItem(item)
+		_placeBlockItemName, _placeBlockItemData = item, itemData
+	end
 	local tool = itemData and itemData.tool
 	if not tool then
 		-- the equipped item is not always listed in the backpack folder, so fall back to
