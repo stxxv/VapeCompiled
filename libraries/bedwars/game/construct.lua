@@ -781,6 +781,10 @@ bedwars.Client = {
 			return netManaged:WaitForChild(remotes[remoteName] or remoteName)
 		end)
 	end,
+	OnEvent = function(self, eventName, func)
+		local remote = netManaged:FindFirstChild(eventName)
+		return remote.OnClientEvent:Connect(func)
+	end,
 }
 
 bedwars.ClientDamageBlock = {
@@ -4105,10 +4109,8 @@ bedwars.WindWalkerController = {
 	spawnOrb = function() end
 }
 
-pcall(function()
-	bedwars.Client:OnEvent('WindWalkerSpeedUpdate', function(data)
-		bedwars.WindWalkerController:updateSpeed(data.multiplier)
-	end)
+bedwars.Client:OnEvent('WindWalkerSpeedUpdate', function(data)
+	bedwars.WindWalkerController:updateSpeed(data.multiplier)
 end)
 
 bedwars.BatteryEffectsController = {
