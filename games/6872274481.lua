@@ -35,7 +35,7 @@ local uipallet = vape.Libraries.uipallet
 local tween = vape.Libraries.tween
 local color = vape.Libraries.color
 local whitelist = vape.Libraries.whitelist
-local prediction = vape.Libraries.prediction
+local prediction
 local getfontbounds = vape.Libraries.getfontbounds
 local getvapeasset = vape.Libraries.getvapeasset
 
@@ -711,6 +711,10 @@ run(function()
 
 	local construct = loadstring(downloadFile('newvape/libraries/bedwars/game/construct.lua'))()
 	repeat task.wait() until construct ~= nil and construct.loaded
+
+	prediction = loadstring(downloadFile('newvape/libraries/bedwars/game/prediction.lua'))()
+	repeat task.wait() until prediction ~= nil and prediction.SolveTrajectory
+	vape.Libraries.prediction = prediction
 end)
 
 for _, v in {'AntiRagdoll', 'TriggerBot', 'SilentAim', 'AutoRejoin', 'Rejoin', 'Disabler', 'Timer', 'ServerHop', 'MouseTP', 'MurderMystery', 'Invisible', 'Swim', 'Reach', 'Wallhop'} do
@@ -1618,11 +1622,9 @@ run(function()
 	local oldVMIsVisible, oldVMPlayAnimation
 	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
 
-	local BUFFER_MULT, buffered = 0.4, {}
-	local Buffer
-	local function bufferWindow(meta)
-		local base = (meta and meta.sword) and meta.sword.attackSpeed or 0.3
-		return math.min(base * 0.4, 0.2)
+	local buffered, Buffer = {}
+	local function getPingMultiplier()
+		return 0.4 * (100 / (100 + lplr:GetNetworkPing() * 1000))
 	end
 
 	task.spawn(function()
@@ -1827,7 +1829,7 @@ run(function()
 												selfPosition = {value = pos}
 											}
 										})
-									elseif Buffer.Enabled and (AttackDelay[v].Attack - os.clock() <= bufferWindow(meta) and not buffered[v]) then
+									elseif Buffer.Enabled and (AttackDelay[v].Attack - os.clock() <= math.min(meta.sword.attackSpeed * getPingMultiplier(), 0.2) and not buffered[v]) then
 										buffered[v] = true
 										task.delay(AttackDelay[v].Attack - os.clock(), function()
 											buffered[v] = nil
@@ -2516,7 +2518,7 @@ run(function()
 							end
 	
 							local newlook = CFrame.new(offsetpos, plr[TargetPart.Value].Position) * CFrame.new(projmeta.projectile == 'owl_projectile' and Vector3.zero or Vector3.new(bedwars.BowConstantsTable.RelX, bedwars.BowConstantsTable.RelY, bedwars.BowConstantsTable.RelZ))
-							local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck)
+							local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck, plr[TargetPart.Value].Position - plr.RootPart.Position, lplr:GetNetworkPing() * 1000)
 							if calc then
 								targetinfo.Targets[plr] = os.clock() + 1
 								return {
@@ -2619,7 +2621,7 @@ run(function()
 									rayCheck.FilterDescendantsInstances = {workspace.Map}
 									local meta = bedwars.ProjectileMeta[projectile]
 									local projSpeed, gravity = meta.launchVelocity, meta.gravitationalAcceleration or 196.2
-									local calc = prediction.SolveTrajectory(pos, projSpeed, gravity, ent.RootPart.Position, ent.RootPart.Velocity, workspace.Gravity, ent.HipHeight, ent.Jumping and 42.6 or nil, rayCheck)
+									local calc = prediction.SolveTrajectory(pos, projSpeed, gravity, ent.RootPart.Position, ent.RootPart.Velocity, workspace.Gravity, ent.HipHeight, ent.Jumping and 42.6 or nil, rayCheck, Vector3.zero, lplr:GetNetworkPing())
 									if calc then
 										targetinfo.Targets[ent] = os.clock() + 1
 										local switched = switchItem(item.tool)
