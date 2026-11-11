@@ -4105,8 +4105,10 @@ bedwars.WindWalkerController = {
 	spawnOrb = function() end
 }
 
-bedwars.Client:OnEvent('WindWalkerSpeedUpdate', function(data)
-    bedwars.WindWalkerController:updateSpeed(data.multiplier)
+pcall(function()
+	bedwars.Client:OnEvent('WindWalkerSpeedUpdate', function(data)
+		bedwars.WindWalkerController:updateSpeed(data.multiplier)
+	end)
 end)
 
 bedwars.BatteryEffectsController = {
