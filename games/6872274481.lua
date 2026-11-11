@@ -1797,12 +1797,6 @@ run(function()
 
 								local actualRoot = v.Character.PrimaryPart
 								if actualRoot then
-									local dir = CFrame.lookAt(selfpos, actualRoot.Position).LookVector
-									local pos = selfpos + dir * math.max(delta.Magnitude - 14.399, 0)
-									bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
-									store.attackReach = (delta.Magnitude * 100) // 1 / 100
-									store.attackReachUpdate = tick() + 1
-
 									if not AttackDelay[v] then
 										AttackDelay[v] = {
 											Attack = 0,
@@ -1811,6 +1805,12 @@ run(function()
 									end
 
 									if os.clock() >= AttackDelay[v].Attack then
+										local dir = CFrame.lookAt(selfpos, actualRoot.Position).LookVector
+										local pos = selfpos + dir * math.max(delta.Magnitude - 14.399, 0)
+										bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
+										store.attackReach = (delta.Magnitude * 100) // 1 / 100
+										store.attackReachUpdate = tick() + 1
+
 										local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(meta)
 
 										AttackDelay[v].Attack = os.clock() + delay
@@ -1834,6 +1834,12 @@ run(function()
 										task.delay(AttackDelay[v].Attack - os.clock(), function()
 											buffered[v] = nil
 											if os.clock() >= AttackDelay[v].Attack then
+												local dir = CFrame.lookAt(selfpos, actualRoot.Position).LookVector
+												local pos = selfpos + dir * math.max(delta.Magnitude - 14.399, 0)
+												bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
+												store.attackReach = (delta.Magnitude * 100) // 1 / 100
+												store.attackReachUpdate = tick() + 1
+
 												local delay = (Hitreg.Value == 'Static' and 0.3) or calcHitreg(meta)
 
 												AttackDelay[v].Attack = os.clock() + delay
