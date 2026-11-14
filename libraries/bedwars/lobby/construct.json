@@ -454,12 +454,12 @@
                 },
                 {
                     "amount": 1,
-                    "itemType": "great_wolf_silas",
+                    "itemType": "decayed_fortuna",
                     "rarity": 5
                 },
                 {
                     "amount": 1,
-                    "itemType": "decayed_fortuna",
+                    "itemType": "great_wolf_silas",
                     "rarity": 5
                 },
                 {
@@ -515,6 +515,11 @@
                 {
                     "amount": 1,
                     "itemType": "wrangler_reindeer_lassy",
+                    "rarity": 5
+                },
+                {
+                    "amount": 1,
+                    "itemType": "funjoke_zarrah",
                     "rarity": 5
                 },
                 {

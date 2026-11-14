@@ -2182,6 +2182,7 @@
             "amount": 1,
             "category": "Combat",
             "currency": "iron",
+            "disabled": true,
             "itemType": "jade_hammer_1",
             "lockAfterPurchase": true,
             "nextTier": "jade_hammer_2",
@@ -2214,8 +2215,7 @@
             ],
             "superiorItems": [
                 "jade_hammer_3"
-            ],
-            "tiered": true
+            ]
         },
         {
             "amount": 1,
@@ -3034,7 +3034,7 @@
         }
     ],
     "CombatConstant": {
-        "RAYCAST_SWORD_CHARACTER_DISTANCE": 14.4,
+        "RAYCAST_SWORD_CHARACTER_DISTANCE": 14.399999999999999,
         "REGION_SWORD_CHARACTER_DISTANCE": 12.600000000000001
     },
     "WinEffectMeta": {
@@ -7956,6 +7956,9 @@
         "ghost_catcher": {
             "basePriceRobux": 599,
             "battlepassSeason": "season2",
+            "bedCoinProduct": {
+                "bedCoinProductId": 82
+            },
             "description": "Gompy the Ghost Hunter! Find ghosts around the map, vacuum them and fire them across the map.",
             "devProductId": 3724169597,
             "difficulty": 3,
@@ -8237,13 +8240,16 @@
             "bedCoinProduct": {
                 "bedCoinProductId": 75
             },
-            "description": "Launch into the air with a giant war hammer. Higher launches deal more slam damage, and the hammer can be upgraded throughout the match.",
+            "description": "Start with a giant war hammer to launch into the air. Higher launches and landing closer to enemies deal more slam damage. Upgrade your hammer throughout the match.",
             "devProductId": 3710145781,
             "difficulty": 3,
             "kitClass": 3,
             "kitItems": [
                 {
                     "featuredInKitSelection": true,
+                    "innateItem": {
+                        "amount": 1
+                    },
                     "itemType": "jade_hammer_1",
                     "previewOnLobbyDisplayModel": true,
                     "removeWhenDeactivatingKit": true
@@ -9211,6 +9217,9 @@
             ],
             "basePriceRobux": 599,
             "battlepassSeason": "season1",
+            "bedCoinProduct": {
+                "bedCoinProductId": 83
+            },
             "description": "Carry a jar of regenerating spirits. Catch wisps to recharge faster, and recall unused spirits. Fusions haunt enemies for 6 seconds. Your sword hits consume ghosts for guaranteed crits; larger fusions give stronger bonuses, direct arrows give half. Unused ghosts refund 13 seconds of recharge each on expiry or target death.",
             "devProductId": 3724169334,
             "difficulty": 1,
@@ -25716,7 +25725,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -25728,7 +25737,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -25748,7 +25757,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -25769,6 +25778,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -25812,7 +25825,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -25820,15 +25833,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -25860,7 +25873,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -25868,15 +25881,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -25896,27 +25909,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -26004,7 +25997,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -26016,7 +26009,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -26036,7 +26029,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -26057,6 +26050,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -26100,7 +26097,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -26108,15 +26105,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -26148,7 +26145,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -26156,15 +26153,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -26184,27 +26181,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -26456,7 +26433,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -26472,7 +26449,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -26493,10 +26470,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -26596,7 +26569,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -26612,7 +26585,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -26633,10 +26606,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -26743,7 +26712,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -26759,7 +26728,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -26780,10 +26749,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -26839,6 +26804,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -26855,7 +26828,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -26867,7 +26840,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -26919,15 +26896,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -27024,7 +26993,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -27040,7 +27009,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -27061,10 +27030,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -27226,7 +27191,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -27242,7 +27207,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -27263,10 +27228,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -27368,7 +27329,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Grimpeak",
+                    "mapName": "to30_Grandpeak",
                     "weight": 1
                 },
                 {
@@ -27384,7 +27345,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to30_Pinedawn",
+                    "mapName": "to30_Pinefall",
                     "weight": 1
                 },
                 {
@@ -27405,10 +27366,6 @@
                 },
                 {
                     "mapName": "to30_Volcano",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to30_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -27476,7 +27433,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -27488,7 +27445,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -27508,7 +27465,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -27529,6 +27486,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -27572,7 +27533,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -27580,15 +27541,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -27620,7 +27581,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -27628,15 +27589,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -27656,27 +27617,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -27747,6 +27688,14 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
+                    "mapName": "duels_Sanctuary",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Abandoned-Cabin",
+                    "weight": 1
+                },
+                {
                     "mapName": "duels_Bloom",
                     "weight": 1
                 },
@@ -27759,7 +27708,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Pagoda_HW",
+                    "mapName": "duels_Pagoda",
                     "weight": 1
                 },
                 {
@@ -27771,7 +27720,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Grim-Ruins",
+                    "mapName": "duels_Ruins",
                     "weight": 1
                 },
                 {
@@ -27779,7 +27728,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Oni-Temple",
+                    "mapName": "duels_Blossom",
                     "weight": 1
                 },
                 {
@@ -27791,7 +27740,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Mystic",
+                    "mapName": "duels_Mystic",
                     "weight": 1
                 },
                 {
@@ -27847,7 +27796,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Nordic",
+                    "mapName": "duels_Glade",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Nordic",
                     "weight": 1
                 },
                 {
@@ -27872,14 +27825,6 @@
                 },
                 {
                     "mapName": "duels_Sky-Temple",
-                    "weight": 1
-                },
-                {
-                    "mapName": "duels_Pinewood",
-                    "weight": 1
-                },
-                {
-                    "mapName": "duels_Grim-Glade",
                     "weight": 1
                 }
             ],
@@ -27945,7 +27890,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -27957,7 +27902,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -27977,7 +27922,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -27998,6 +27943,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -28041,7 +27990,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -28049,15 +27998,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -28089,7 +28038,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -28097,15 +28046,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -28125,27 +28074,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -28224,10 +28153,6 @@
             },
             "maps": [
                 {
-                    "mapName": "to2_Haunted-Mansion",
-                    "weight": 4
-                },
-                {
                     "mapName": "to2_Western",
                     "weight": 1
                 },
@@ -28252,7 +28177,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Creek",
+                    "mapName": "to2_Creek",
                     "weight": 1
                 },
                 {
@@ -28292,11 +28217,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinedawn",
+                    "mapName": "to2_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Autumn-Forest",
+                    "mapName": "to2_Forest",
                     "weight": 1
                 },
                 {
@@ -28332,7 +28257,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Pond",
+                    "mapName": "to2_Pond",
                     "weight": 1
                 },
                 {
@@ -28352,7 +28277,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Spookgreen",
+                    "mapName": "to2_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -28368,11 +28293,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Aztec-Ruins",
+                    "mapName": "to2_Aztec",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Oni-Temple",
+                    "mapName": "to2_Blossom",
                     "weight": 1
                 },
                 {
@@ -28400,7 +28325,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pagoda_HW",
+                    "mapName": "to2_Pagoda",
                     "weight": 1
                 },
                 {
@@ -28408,19 +28333,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to2_Crypt",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pumpkin",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to2_Pumpkin-Patch",
+                    "mapName": "to2_Grotto",
                     "weight": 1
                 }
             ],
@@ -29000,7 +28917,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -29012,7 +28929,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -29032,7 +28949,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -29053,6 +28970,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -29096,7 +29017,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -29104,15 +29025,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -29144,7 +29065,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -29152,15 +29073,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -29180,27 +29101,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -29276,7 +29177,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -29288,7 +29189,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -29308,7 +29209,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -29329,6 +29230,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -29372,7 +29277,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -29380,15 +29285,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -29420,7 +29325,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -29428,15 +29333,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -29456,27 +29361,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -29537,6 +29422,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -29553,7 +29446,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -29565,7 +29458,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -29617,15 +29514,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -29669,6 +29558,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -29685,7 +29582,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -29697,7 +29594,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -29749,15 +29650,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -30206,11 +30099,11 @@
             "lobbyDelaySecs": 40,
             "maps": [
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Towers",
+                    "mapName": "to5_Citadel-Towers",
                     "weight": 1
                 },
                 {
@@ -30226,7 +30119,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -30234,7 +30127,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 },
                 {
@@ -30317,7 +30210,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -30329,7 +30222,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -30349,7 +30242,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -30370,6 +30263,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -30413,7 +30310,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -30421,15 +30318,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -30461,7 +30358,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -30469,15 +30366,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -30497,27 +30394,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -30592,7 +30469,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -30604,7 +30481,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -30624,7 +30501,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -30645,6 +30522,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -30688,7 +30569,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -30696,15 +30577,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -30736,7 +30617,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -30744,15 +30625,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -30772,27 +30653,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -30868,7 +30729,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -30880,7 +30741,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -30900,7 +30761,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -30921,6 +30782,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -30964,7 +30829,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -30972,15 +30837,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -31012,7 +30877,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -31020,15 +30885,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -31048,27 +30913,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -31129,6 +30974,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -31145,7 +30998,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -31157,7 +31010,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -31209,15 +31066,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -31258,6 +31107,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -31274,7 +31131,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -31286,7 +31143,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -31338,15 +31199,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -31387,6 +31240,14 @@
             "killBounties": true,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -31403,7 +31264,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -31415,7 +31276,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -31467,15 +31332,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -31573,10 +31430,6 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
-                    "mapName": "to2_Haunted-Mansion",
-                    "weight": 4
-                },
-                {
                     "mapName": "to2_Western",
                     "weight": 1
                 },
@@ -31601,7 +31454,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Creek",
+                    "mapName": "to2_Creek",
                     "weight": 1
                 },
                 {
@@ -31641,11 +31494,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinedawn",
+                    "mapName": "to2_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Autumn-Forest",
+                    "mapName": "to2_Forest",
                     "weight": 1
                 },
                 {
@@ -31681,7 +31534,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Pond",
+                    "mapName": "to2_Pond",
                     "weight": 1
                 },
                 {
@@ -31701,7 +31554,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Spookgreen",
+                    "mapName": "to2_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -31717,11 +31570,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Aztec-Ruins",
+                    "mapName": "to2_Aztec",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Oni-Temple",
+                    "mapName": "to2_Blossom",
                     "weight": 1
                 },
                 {
@@ -31749,7 +31602,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pagoda_HW",
+                    "mapName": "to2_Pagoda",
                     "weight": 1
                 },
                 {
@@ -31757,19 +31610,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to2_Crypt",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pumpkin",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to2_Pumpkin-Patch",
+                    "mapName": "to2_Grotto",
                     "weight": 1
                 }
             ],
@@ -31857,10 +31702,6 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
-                    "mapName": "to2_Haunted-Mansion",
-                    "weight": 4
-                },
-                {
                     "mapName": "to2_Western",
                     "weight": 1
                 },
@@ -31885,7 +31726,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Creek",
+                    "mapName": "to2_Creek",
                     "weight": 1
                 },
                 {
@@ -31925,11 +31766,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinedawn",
+                    "mapName": "to2_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Autumn-Forest",
+                    "mapName": "to2_Forest",
                     "weight": 1
                 },
                 {
@@ -31965,7 +31806,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Pond",
+                    "mapName": "to2_Pond",
                     "weight": 1
                 },
                 {
@@ -31985,7 +31826,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Spookgreen",
+                    "mapName": "to2_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -32001,11 +31842,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Aztec-Ruins",
+                    "mapName": "to2_Aztec",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Oni-Temple",
+                    "mapName": "to2_Blossom",
                     "weight": 1
                 },
                 {
@@ -32033,7 +31874,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pagoda_HW",
+                    "mapName": "to2_Pagoda",
                     "weight": 1
                 },
                 {
@@ -32041,19 +31882,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to2_Crypt",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pumpkin",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to2_Pumpkin-Patch",
+                    "mapName": "to2_Grotto",
                     "weight": 1
                 }
             ],
@@ -32162,7 +31995,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -32174,7 +32007,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -32194,7 +32027,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -32215,6 +32048,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -32258,7 +32095,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -32266,15 +32103,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -32306,7 +32143,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -32314,15 +32151,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -32342,27 +32179,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -32450,7 +32267,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -32462,7 +32279,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -32482,7 +32299,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -32503,6 +32320,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -32546,7 +32367,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -32554,15 +32375,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -32594,7 +32415,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -32602,15 +32423,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -32630,27 +32451,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -32735,6 +32536,14 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
+                    "mapName": "duels_Sanctuary",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Abandoned-Cabin",
+                    "weight": 1
+                },
+                {
                     "mapName": "duels_Bloom",
                     "weight": 1
                 },
@@ -32747,7 +32556,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Pagoda_HW",
+                    "mapName": "duels_Pagoda",
                     "weight": 1
                 },
                 {
@@ -32759,7 +32568,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Grim-Ruins",
+                    "mapName": "duels_Ruins",
                     "weight": 1
                 },
                 {
@@ -32767,7 +32576,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Oni-Temple",
+                    "mapName": "duels_Blossom",
                     "weight": 1
                 },
                 {
@@ -32779,7 +32588,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Mystic",
+                    "mapName": "duels_Mystic",
                     "weight": 1
                 },
                 {
@@ -32835,7 +32644,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Nordic",
+                    "mapName": "duels_Glade",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Nordic",
                     "weight": 1
                 },
                 {
@@ -32861,19 +32674,12 @@
                 {
                     "mapName": "duels_Sky-Temple",
                     "weight": 1
-                },
-                {
-                    "mapName": "duels_Pinewood",
-                    "weight": 1
-                },
-                {
-                    "mapName": "duels_Grim-Glade",
-                    "weight": 1
                 }
             ],
             "matchStartTime": 25,
             "matchValidator": {
-                "reqPlayersPerTeamPercentile": 0.6
+                "reqPlayersPerTeamPercentile": 0.6,
+                "timeTillLastValidate": 45
             },
             "partyEloFunction": "max",
             "placeId": 8560631822,
@@ -33124,10 +32930,6 @@
             },
             "maps": [
                 {
-                    "mapName": "to2_Haunted-Mansion",
-                    "weight": 4
-                },
-                {
                     "mapName": "to2_Western",
                     "weight": 1
                 },
@@ -33152,7 +32954,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Creek",
+                    "mapName": "to2_Creek",
                     "weight": 1
                 },
                 {
@@ -33192,11 +32994,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinedawn",
+                    "mapName": "to2_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Autumn-Forest",
+                    "mapName": "to2_Forest",
                     "weight": 1
                 },
                 {
@@ -33232,7 +33034,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Haunted-Pond",
+                    "mapName": "to2_Pond",
                     "weight": 1
                 },
                 {
@@ -33252,7 +33054,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Spookgreen",
+                    "mapName": "to2_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -33268,11 +33070,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Aztec-Ruins",
+                    "mapName": "to2_Aztec",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Oni-Temple",
+                    "mapName": "to2_Blossom",
                     "weight": 1
                 },
                 {
@@ -33300,7 +33102,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pagoda_HW",
+                    "mapName": "to2_Pagoda",
                     "weight": 1
                 },
                 {
@@ -33308,19 +33110,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to2_Crypt",
                     "weight": 1
                 },
                 {
-                    "mapName": "to2_Pumpkin",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to2_Pumpkin-Patch",
+                    "mapName": "to2_Grotto",
                     "weight": 1
                 }
             ],
@@ -33726,7 +33520,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -33738,7 +33532,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -33758,7 +33552,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -33779,6 +33573,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -33822,7 +33620,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -33830,15 +33628,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -33870,7 +33668,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -33878,15 +33676,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -33906,27 +33704,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -34012,7 +33790,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -34024,7 +33802,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -34044,7 +33822,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -34065,6 +33843,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -34108,7 +33890,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -34116,15 +33898,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -34156,7 +33938,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -34164,15 +33946,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -34192,27 +33974,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -34440,7 +34202,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -34452,7 +34214,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -34472,7 +34234,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -34493,6 +34255,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -34536,7 +34302,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -34544,15 +34310,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -34584,7 +34350,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -34592,15 +34358,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -34620,27 +34386,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -34792,7 +34538,19 @@
             "icon": "rbxassetid://132177359197414",
             "maps": [
                 {
-                    "mapName": "gg_Spooky-Siege",
+                    "mapName": "gg_Blossom",
+                    "weight": 1
+                },
+                {
+                    "mapName": "gg_Ember-Woods",
+                    "weight": 1
+                },
+                {
+                    "mapName": "gg_Volatile",
+                    "weight": 1
+                },
+                {
+                    "mapName": "gg_Siege",
                     "weight": 1
                 },
                 {
@@ -34800,7 +34558,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "gg_Autumn-Treetop",
+                    "mapName": "gg_Treetop",
                     "weight": 1
                 },
                 {
@@ -34808,11 +34566,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "gg_Harbour_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "gg_Oni-Temple",
+                    "mapName": "gg_Harbour",
                     "weight": 1
                 },
                 {
@@ -35269,7 +35023,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -35281,7 +35035,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -35301,7 +35055,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -35322,6 +35076,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -35365,7 +35123,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -35373,15 +35131,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -35413,7 +35171,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -35421,15 +35179,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -35449,27 +35207,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -35722,7 +35460,11 @@
             "killBounties": false,
             "maps": [
                 {
-                    "mapName": "LassoWars_1",
+                    "mapName": "LassoWars_Treetop-Park",
+                    "weight": 1
+                },
+                {
+                    "mapName": "LassoWars_Honey-Falls",
                     "weight": 1
                 }
             ],
@@ -36322,7 +36064,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pagoda_HW",
+                    "mapName": "to4_Pagoda",
                     "weight": 1
                 },
                 {
@@ -36334,7 +36076,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Creek",
+                    "mapName": "to4_Creek",
                     "weight": 1
                 },
                 {
@@ -36354,7 +36096,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Sanctum_HW",
+                    "mapName": "to4_Sanctum",
                     "weight": 1
                 },
                 {
@@ -36375,6 +36117,10 @@
                 },
                 {
                     "mapName": "to4_Workshop",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to4_Castle-Grounds",
                     "weight": 1
                 },
                 {
@@ -36418,7 +36164,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Haunted-Pond",
+                    "mapName": "to4_Pond",
                     "weight": 1
                 },
                 {
@@ -36426,15 +36172,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Autumn-Forest",
+                    "mapName": "to4_Forest",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinedawn",
+                    "mapName": "to4_Pinefall",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Grim-Ruins",
+                    "mapName": "to4_Ruins",
                     "weight": 1
                 },
                 {
@@ -36466,7 +36212,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Aztec-Ruins",
+                    "mapName": "to4_Aztec",
                     "weight": 1
                 },
                 {
@@ -36474,15 +36220,15 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Oni-Temple",
+                    "mapName": "to4_Blossom",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Slime-Invasion",
+                    "mapName": "to4_Void-Invasion",
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Spookgreen",
+                    "mapName": "to4_Fairgreen",
                     "weight": 1
                 },
                 {
@@ -36502,27 +36248,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to4_Pinewood",
-                    "weight": 1
-                },
-                {
                     "mapName": "to4_Crypt",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin-Patch",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Spook-Mansion",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Haunted-Manor",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to4_Pumpkin",
                     "weight": 1
                 },
                 {
@@ -37296,11 +37022,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "sw_Pumpkin-Patch",
+                    "mapName": "sw_Glade",
                     "weight": 1
                 },
                 {
-                    "mapName": "sw_Grim-Glade",
+                    "mapName": "sw_Pumpkin-Patch",
                     "weight": 1
                 }
             ],
@@ -37729,6 +37455,14 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
+                    "mapName": "to5_Nordic",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Castle-Grounds",
+                    "weight": 1
+                },
+                {
                     "mapName": "to5_Glacier",
                     "weight": 1
                 },
@@ -37745,7 +37479,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Spooky-Valley",
+                    "mapName": "to5_Champions-Valley",
                     "weight": 1
                 },
                 {
@@ -37757,7 +37491,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Haunted-Woods",
+                    "mapName": "to5_Citadel-Towers",
+                    "weight": 1
+                },
+                {
+                    "mapName": "to5_Elder-Woods",
                     "weight": 1
                 },
                 {
@@ -37809,15 +37547,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "to5_Pagoda_HW",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Spooky-Towers",
-                    "weight": 1
-                },
-                {
-                    "mapName": "to5_Pumpkin-Patch",
+                    "mapName": "to5_Pagoda",
                     "weight": 1
                 }
             ],
@@ -38001,6 +37731,14 @@
             "kitModelPreloadTime": 10,
             "maps": [
                 {
+                    "mapName": "duels_Sanctuary",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Abandoned-Cabin",
+                    "weight": 1
+                },
+                {
                     "mapName": "duels_Bloom",
                     "weight": 1
                 },
@@ -38013,7 +37751,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Pagoda_HW",
+                    "mapName": "duels_Pagoda",
                     "weight": 1
                 },
                 {
@@ -38025,7 +37763,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Grim-Ruins",
+                    "mapName": "duels_Ruins",
                     "weight": 1
                 },
                 {
@@ -38033,7 +37771,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Oni-Temple",
+                    "mapName": "duels_Blossom",
                     "weight": 1
                 },
                 {
@@ -38045,7 +37783,7 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Mystic",
+                    "mapName": "duels_Mystic",
                     "weight": 1
                 },
                 {
@@ -38101,7 +37839,11 @@
                     "weight": 1
                 },
                 {
-                    "mapName": "duels_Spooky-Nordic",
+                    "mapName": "duels_Glade",
+                    "weight": 1
+                },
+                {
+                    "mapName": "duels_Nordic",
                     "weight": 1
                 },
                 {
@@ -38126,14 +37868,6 @@
                 },
                 {
                     "mapName": "duels_Sky-Temple",
-                    "weight": 1
-                },
-                {
-                    "mapName": "duels_Pinewood",
-                    "weight": 1
-                },
-                {
-                    "mapName": "duels_Grim-Glade",
                     "weight": 1
                 }
             ],
