@@ -1675,9 +1675,8 @@ run(function()
 
 		local base = meta.sword.attackSpeed
 		local ping = math.clamp(getSmoothedPing(), 0, 1)
-		local raw = math.clamp(base - math.min(ping * 1.5, base * 0.35), 0.05, 2)
 
-		return math.clamp(raw, 0.05, 2)
+		return math.clamp(base - ping * 1.5, 0.05, 2)
 	end
 
 	Killaura = vape.Categories.Blatant:CreateModule({
