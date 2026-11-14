@@ -1452,7 +1452,7 @@ run(function()
 	})
 	Mode = Fly:CreateDropdown({
 		Name = 'Mode',
-		List = {'Static', 'Bounce'}
+		List = {'Static', 'Bounce'},
 		Tooltip = 'Bounce - Automatically makes you bounce in the air.\nStatic - Keeps you still in the air.'
 	})
 	Value = Fly:CreateSlider({
