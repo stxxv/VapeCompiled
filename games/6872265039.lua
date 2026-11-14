@@ -17,14 +17,21 @@ local function notif(...)
 end
 
 local function run(func)
-	local suc, res = pcall(func)
+	xpcall(func, function(err)
+        local time, timestamp, date, filecontents, contents = string.lower(os.date('%I:%M%p')), nil, os.date('%d/%m/%y')
 
-	if not suc then
-		notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
-		return
-	end
+        do
+            if isfile('newvape/error.txt') then
+                filecontents = readfile('newvape/error.txt')
+            end
 
-	return res
+            timestamp = `{time}, {date}`
+            contents = ((filecontents and filecontents ~= '') and `{filecontents}\n\ntimestamp: {timestamp}\nerror: {debug.traceback(err, 2)}`) or `timestamp: {timestamp}\nerror: {debug.traceback(err, 2)}`
+        end
+
+        writefile('newvape/error.txt', contents)
+        notif('Vape', `Module failed to load: {tostring(err)}`, 10, 'alert')
+    end)
 end
 
 local function downloadFile(path, callback)

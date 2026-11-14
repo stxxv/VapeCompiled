@@ -485,14 +485,21 @@ local sortmethods = {
 }
 
 local function run(func)
-    local suc, res = pcall(func)
-    
-    if not suc then
-        notif('Vape', 'Module failed to load: '..tostring(res), 60, 'alert')
-        return
-    end
+	xpcall(func, function(err)
+        local time, timestamp, date, filecontents, contents = string.lower(os.date('%I:%M%p')), nil, os.date('%d/%m/%y')
 
-    return res
+        do
+            if isfile('newvape/error.txt') then
+                filecontents = readfile('newvape/error.txt')
+            end
+
+            timestamp = `{time}, {date}`
+            contents = ((filecontents and filecontents ~= '') and `{filecontents}\n\ntimestamp: {timestamp}\nerror: {debug.traceback(err, 2)}`) or `timestamp: {timestamp}\nerror: {debug.traceback(err, 2)}`
+        end
+
+        writefile('newvape/error.txt', contents)
+        notif('Vape', `Module failed to load: {tostring(err)}`, 10, 'alert')
+    end)
 end
 
 run(function()
@@ -1389,7 +1396,7 @@ run(function()
 										if ray and TP.Enabled then
 											tpToggle = false
 											oldy = root.Position.Y
-											tpTick = tick() + 0.11
+											tpTick = tick() + 0.12
 											root.CFrame = CFrame.lookAlong(Vector3.new(root.Position.X, ray.Position.Y + entitylib.character.HipHeight, root.Position.Z), root.CFrame.LookVector)
 										end
 									end
@@ -2446,11 +2453,11 @@ run(function()
 					if entitylib.isAlive then
 						local root, oldVelo = entitylib.character.RootPart
 						oldVelo = root.AssemblyLinearVelocity.Y
-						if root.AssemblyLinearVelocity.Y < -45 then
+						if root.AssemblyLinearVelocity.Y <= -44.5 then
 							root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, 44, root.AssemblyLinearVelocity.Z)
 							entitylib.character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
 	
-							runService.PreSimulation:Wait()
+							runService.PreRender:Wait()
 							root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, oldVelo, root.AssemblyLinearVelocity.Z)
 						end
 					end
