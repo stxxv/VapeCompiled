@@ -35,7 +35,7 @@ local uipallet = vape.Libraries.uipallet
 local tween = vape.Libraries.tween
 local color = vape.Libraries.color
 local whitelist = vape.Libraries.whitelist
-local prediction
+local prediction = vape.Libraries.prediction
 local getfontbounds = vape.Libraries.getfontbounds
 local getvapeasset = vape.Libraries.getvapeasset
 
@@ -711,10 +711,6 @@ run(function()
 
 	local construct = loadstring(downloadFile('newvape/libraries/bedwars/game/construct.lua'))()
 	repeat task.wait() until construct ~= nil and construct.loaded
-
-	prediction = loadstring(downloadFile('newvape/libraries/bedwars/game/prediction.lua'))()
-	repeat task.wait() until prediction ~= nil and prediction.SolveTrajectory
-	vape.Libraries.prediction = prediction
 end)
 
 for _, v in {'AntiRagdoll', 'TriggerBot', 'SilentAim', 'AutoRejoin', 'Rejoin', 'Disabler', 'Timer', 'ServerHop', 'MouseTP', 'MurderMystery', 'Invisible', 'Swim', 'Reach', 'Wallhop'} do
@@ -1586,7 +1582,6 @@ run(function()
 			Tooltip = 'Lets you sprint with a speed potion.'
 		})
 	end
-	
 end)
 
 local Attacking
@@ -1623,24 +1618,21 @@ run(function()
 	local AttackRemote, AttackDelay = {FireServer = function() end}, {}
 
 	local buffered, Buffer = {}
-	local pingHistory = {}
-	local pingIdx = 1
-	local PING_SAMPLES = 5
+	local pingHistory, pingIdx = {}, 1
 
-	-- smoothed ping: averages the last few samples so a single frame spike doesn't
-	-- destabilize hit registration or prediction. rapid jitter is dampened while
-	-- sustained latency changes still track within a couple of ticks.
 	local function getSmoothedPing()
 		local raw = lplr:GetNetworkPing()
 		pingHistory[pingIdx] = raw
-		pingIdx = pingIdx % PING_SAMPLES + 1
+		pingIdx = pingIdx % 5 + 1
+
 		local sum, count = 0, 0
-		for _, p in ipairs(pingHistory) do
-			if p then
-				sum = sum + p
+		for _, v in ipairs(pingHistory) do
+			if v then
+				sum = sum + v
 				count = count + 1
 			end
 		end
+		
 		return count > 0 and (sum / count) or raw
 	end
 
@@ -1683,7 +1675,7 @@ run(function()
 
 		local base = meta.sword.attackSpeed
 		local ping = math.clamp(getSmoothedPing(), 0, 1)
-		local raw = math.clamp(base - math.min(ping * 0.5, base * 0.35), 0.05, 2)
+		local raw = math.clamp(base - math.min(ping * 1.5, base * 0.35), 0.05, 2)
 
 		return math.clamp(raw, 0.05, 2)
 	end
@@ -1962,7 +1954,7 @@ run(function()
 			
 			Buffer.Object.Visible = (callback == 'Dynamic' and true) or false
 		end,
-		Tooltip = 'Dynamic - Automatically uses your ping and sword cooldown to get the best hitreg.\nStatic - Uses your sword cooldown for a consistent hitreg.'
+		Tooltip = 'Dynamic - Automatically uses your ping and sword cooldown to get the best hitreg (depends on FPS and ping).\nStatic - Uses your sword cooldown for a consistent hitreg of 33 to 34 hits per second.'
 	})
 	Buffer = Killaura:CreateToggle({
 		Name = 'Buffer hits',
@@ -2556,7 +2548,7 @@ run(function()
 							end
 	
 							local newlook = CFrame.new(offsetpos, plr[TargetPart.Value].Position) * CFrame.new(projmeta.projectile == 'owl_projectile' and Vector3.zero or Vector3.new(bedwars.BowConstantsTable.RelX, bedwars.BowConstantsTable.RelY, bedwars.BowConstantsTable.RelZ))
-							local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck, plr[TargetPart.Value].Position - plr.RootPart.Position, lplr:GetNetworkPing() * 1000)
+							local calc = prediction.SolveTrajectory(newlook.p, projSpeed, gravity, plr[TargetPart.Value].Position, projmeta.projectile == 'telepearl' and Vector3.zero or plr[TargetPart.Value].Velocity, playerGravity, plr.HipHeight, plr.Jumping and 42.6 or nil, rayCheck)
 							if calc then
 								targetinfo.Targets[plr] = os.clock() + 1
 								return {
@@ -2659,7 +2651,7 @@ run(function()
 									rayCheck.FilterDescendantsInstances = {workspace.Map}
 									local meta = bedwars.ProjectileMeta[projectile]
 									local projSpeed, gravity = meta.launchVelocity, meta.gravitationalAcceleration or 196.2
-									local calc = prediction.SolveTrajectory(pos, projSpeed, gravity, ent.RootPart.Position, ent.RootPart.Velocity, workspace.Gravity, ent.HipHeight, ent.Jumping and 42.6 or nil, rayCheck, Vector3.zero, lplr:GetNetworkPing())
+									local calc = prediction.SolveTrajectory(pos, projSpeed, gravity, ent.RootPart.Position, ent.RootPart.Velocity, workspace.Gravity, ent.HipHeight, ent.Jumping and 42.6 or nil, rayCheck)
 									if calc then
 										targetinfo.Targets[ent] = os.clock() + 1
 										local switched = switchItem(item.tool)
